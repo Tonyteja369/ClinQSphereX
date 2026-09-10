@@ -1,0 +1,16 @@
+body{font-family:system-ui,Arial;background:#f6f7fb;margin:0;padding:18px;color:#111}
+.container{max-width:1100px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center}
+button{padding:8px 12px;border-radius:6px;border:none;background:#0366d6;color:white;cursor:pointer}
+.two-col{display:flex;gap:16px;margin-top:16px}
+aside{width:220px;background:#fff;padding:12px;border-radius:8px}
+main{flex:1;background:#fff;padding:12px;border-radius:8px}
+.card{background:#fff;padding:12px;border-radius:8px;margin:8px 0}
+.candidate{margin-bottom:8px}
+.cands{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.center{display:flex;justify-content:center;align-items:center;height:80vh}
+label{display:block;margin:6px 0}
+input{padding:6px;border-radius:6px;border:1px solid #ddd}
+.actions{display:flex;gap:8px;margin-bottom:12px}
+.active{font-weight:bold}
+.roc-area{margin-top:12px}

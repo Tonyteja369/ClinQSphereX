@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p1",
+    "birthDate": "1978-05-12",
+    "bmi": 29.4,
+    "hba1c": 6.0,
+    "systolic_bp": 132,
+    "symptom_score": 5,
+    "prior_condition_flag": 0,
+    "medication_flag": 0
+  },
+  {
+    "id": "p2",
+    "birthDate": "1955-11-30",
+    "bmi": 33.1,
+    "hba1c": 7.1,
+    "systolic_bp": 148,
+    "symptom_score": 3,
+    "prior_condition_flag": 1,
+    "medication_flag": 1
+  },
+  {
+    "id": "p3",
+    "birthDate": "1990-02-20",
+    "bmi": 24.8,
+    "hba1c": 5.4,
+    "systolic_bp": 118,
+    "symptom_score": 7,
+    "prior_condition_flag": 0,
+    "medication_flag": 0
+  }
+]
