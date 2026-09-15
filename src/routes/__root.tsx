@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { DevRouterDiagnostics } from "@/components/DevRouterDiagnostics";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -146,7 +147,9 @@ function RootComponent() {
         className="route-stage"
         data-navigating={isNavigating ? "true" : "false"}
       >
-        <Outlet />
+        <DevRouterDiagnostics>
+          <Outlet />
+        </DevRouterDiagnostics>
       </div>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
