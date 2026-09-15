@@ -56,7 +56,7 @@ const sections: [string, string][] = [
 function ResearchPage() {
   return (
     <>
-      <main className="mx-auto max-w-4xl px-5 py-14">
+      <main className="mx-auto max-w-4xl px-1 py-4 sm:px-5 sm:py-8">
         <h1 className="font-display text-3xl font-semibold">Research</h1>
 
         <section className="surface-strong mt-8 p-6">

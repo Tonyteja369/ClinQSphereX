@@ -1,6 +1,7 @@
 # ClinQSphereX roadmap
 
 ## Current — Prismatic Ivory Nexus redesign
+- [x] Extend optical glass, reflections and accessible route transitions across every remaining page
 - [x] Apply the selected ivory-violet optical glass system across shared controls and surfaces
 - [x] Recompose authentication and the authenticated shell around floating tactile workspaces
 - [x] Verify the entry experience and dashboard at desktop and mobile sizes

@@ -43,7 +43,7 @@ function DiseasePage() {
 
   return (
     <>
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen bg-transparent">
         <section className="mx-auto max-w-6xl px-5 pb-10 pt-14">
           <Link to="/diseases" className="text-sm text-muted-foreground hover:text-foreground">
             ← All disease areas
