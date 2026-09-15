@@ -13,6 +13,11 @@
   to{opacity:1}
 }
 
+@keyframes prism-sweep{
+  0%{transform:translateX(-180%) skewX(-18deg)}
+  55%,100%{transform:translateX(320%) skewX(-18deg)}
+}
+
 .motion-rise{
   animation:rise var(--t-base) var(--e-glide) both;
 }
@@ -24,16 +29,16 @@
 .motion-rise-list>:nth-child(6){animation-delay:200ms}
 
 .motion-lift{
-  transition:transform var(--t-fast) var(--e-glide),filter var(--t-fast) var(--e-glide);
+  transition:transform var(--t-base) var(--e-glide),filter var(--t-base) var(--e-glide),box-shadow var(--t-base) var(--e-glide);
 }
 
 .motion-lift:hover,.motion-lift:focus-visible{
-  transform:translateY(-2px);
-  filter:brightness(1.02);
+  transform:translateY(-3px);
+  filter:brightness(1.025) saturate(1.04);
 }
 
 .motion-press:active{
-  transform:scale(.985);
+  transform:translateY(1px) scale(.985);
   transition:transform var(--t-fast) var(--e-exit);
 }
 
