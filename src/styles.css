@@ -8,8 +8,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-display: "Inter Tight", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter Tight", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --radius-sm: calc(var(--radius) - 3px);
   --radius-md: calc(var(--radius) - 1px);
@@ -61,7 +61,7 @@
   violet-900 #3B176D · 700 #5B21B6 · 600 #6D28D9 · 400 #8B5CF6 · 100 #EDE9FE · 50 #F5F3FF
 */
 :root {
-  --radius: 0.5rem;
+  --radius: 1rem;
 
   --violet-900: oklch(0.34 0.14 300);
   --violet-800: oklch(0.38 0.17 297);
@@ -72,20 +72,20 @@
   --violet-100: oklch(0.94 0.03 296);
   --violet-50: oklch(0.97 0.015 296);
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.21 0.02 300);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.02 300);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.02 300);
-  --primary: var(--violet-600);
+  --background: oklch(0.955 0.014 82);
+  --foreground: oklch(0.29 0.012 286);
+  --card: oklch(0.99 0.007 82 / 78%);
+  --card-foreground: oklch(0.29 0.012 286);
+  --popover: oklch(0.99 0.007 82 / 88%);
+  --popover-foreground: oklch(0.29 0.012 286);
+  --primary: oklch(0.51 0.095 291);
   --primary-foreground: oklch(1 0 0);
-  --secondary: var(--violet-50);
-  --secondary-foreground: var(--violet-800);
-  --muted: oklch(0.98 0.006 300);
-  --muted-foreground: oklch(0.51 0.022 300);
-  --accent: var(--violet-100);
-  --accent-foreground: var(--violet-800);
+  --secondary: oklch(0.91 0.024 291 / 78%);
+  --secondary-foreground: oklch(0.39 0.075 291);
+  --muted: oklch(0.93 0.012 82 / 72%);
+  --muted-foreground: oklch(0.5 0.018 286);
+  --accent: oklch(0.88 0.04 291 / 72%);
+  --accent-foreground: oklch(0.39 0.075 291);
   --destructive: oklch(0.55 0.19 22);
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.52 0.11 160);
@@ -94,33 +94,33 @@
   --warning-foreground: oklch(1 0 0);
   --unknown: oklch(0.55 0.02 300);
   --unknown-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.015 300);
-  --input: oklch(0.9 0.018 300);
-  --ring: var(--violet-500);
-  --ink: var(--violet-900);
+  --border: oklch(0.82 0.025 291 / 62%);
+  --input: oklch(0.84 0.022 291 / 68%);
+  --ring: oklch(0.59 0.1 291);
+  --ink: oklch(0.29 0.012 286);
   --ink-foreground: oklch(0.99 0.005 300);
   --ink-muted: oklch(0.82 0.04 300);
-  --surface-soft: oklch(0.985 0.008 300);
+  --surface-soft: oklch(0.97 0.012 82 / 78%);
   --chart-1: var(--violet-600);
   --chart-2: var(--violet-400);
   --chart-3: var(--violet-800);
   --chart-4: oklch(0.75 0.09 296);
   --chart-5: oklch(0.86 0.05 296);
-  --hero: oklch(0.12 0.025 300);
-  --hero-foreground: oklch(0.985 0.008 300);
-  --hero-muted: oklch(0.78 0.025 300);
-  --hero-accent: oklch(0.76 0.16 303);
+  --hero: oklch(0.955 0.014 82);
+  --hero-foreground: oklch(0.29 0.012 286);
+  --hero-muted: oklch(0.5 0.018 286);
+  --hero-accent: oklch(0.59 0.1 291);
   --warm-signal: oklch(0.74 0.13 65);
-  --glass: oklch(0.99 0.008 300 / 72%);
-  --glass-dark: oklch(0.18 0.035 300 / 66%);
-  --glass-tint-strong: oklch(0.985 0.016 300 / 88%);
-  --glass-evidence: oklch(0.975 0.024 298 / 84%);
-  --glass-nav: oklch(0.99 0.01 300 / 82%);
-  --glass-border: oklch(0.79 0.08 298 / 32%);
-  --glass-highlight: oklch(1 0 0 / 62%);
-  --glass-overlay: oklch(0.12 0.025 300 / 58%);
-  --shadow-glass: 0 18px 52px -28px oklch(0.26 0.1 298 / 36%), 0 5px 16px -10px oklch(0.2 0.06 300 / 20%);
-  --shadow-glass-raised: 0 28px 80px -34px oklch(0.23 0.12 298 / 46%), 0 10px 24px -16px oklch(0.2 0.06 300 / 28%);
+  --glass: oklch(1 0 0 / 52%);
+  --glass-dark: oklch(0.38 0.06 291 / 78%);
+  --glass-tint-strong: oklch(1 0 0 / 76%);
+  --glass-evidence: oklch(0.96 0.026 291 / 76%);
+  --glass-nav: oklch(1 0 0 / 66%);
+  --glass-border: oklch(1 0 0 / 78%);
+  --glass-highlight: oklch(1 0 0 / 94%);
+  --glass-overlay: oklch(0.29 0.012 286 / 38%);
+  --shadow-glass: 0 1px 0 oklch(1 0 0 / 88%) inset, 0 -1px 0 oklch(0.51 0.095 291 / 12%) inset, 0 18px 44px -26px oklch(0.29 0.03 291 / 30%);
+  --shadow-glass-raised: 0 1px 0 oklch(1 0 0 / 96%) inset, 0 -1px 0 oklch(0.51 0.095 291 / 18%) inset, 0 28px 72px -32px oklch(0.29 0.04 291 / 38%);
   --glass-transition: 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -147,6 +147,12 @@
   --glass-highlight: oklch(1 0 0 / 20%);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not(.dark) {
+    color-scheme: light;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -157,7 +163,10 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background:
+      radial-gradient(circle at 12% 8%, color-mix(in oklab, var(--accent) 54%, transparent), transparent 28%),
+      radial-gradient(circle at 88% 84%, color-mix(in oklab, var(--warm-signal) 14%, transparent), transparent 25%),
+      var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -199,10 +208,10 @@
   position: relative;
   overflow: hidden;
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
+  border-radius: 1.5rem;
   background: var(--glass-tint);
   box-shadow: var(--shadow-glass), inset 1px 1px 0 var(--glass-edge), inset -1px -1px 0 color-mix(in oklab, var(--primary) 8%, transparent);
-  backdrop-filter: blur(18px) saturate(132%);
+  backdrop-filter: blur(24px) saturate(145%);
   transition:
     border-color var(--glass-transition),
     box-shadow var(--glass-transition),
@@ -211,20 +220,63 @@
 }
 
 @utility liquid-glass-card {
-  background: linear-gradient(145deg, var(--glass-tint-strong), var(--glass-tint));
+  background:
+    linear-gradient(138deg, oklch(1 0 0 / 76%), oklch(1 0 0 / 35%) 46%, oklch(0.88 0.04 291 / 22%)),
+    var(--glass-tint);
 }
 
 @utility liquid-glass-elevated {
   background: linear-gradient(145deg, var(--glass-tint-strong), color-mix(in oklab, var(--glass-tint) 88%, var(--violet-100)));
   box-shadow: var(--shadow-glass-raised), inset 1px 1px 0 var(--glass-edge), inset -1px -1px 0 color-mix(in oklab, var(--primary) 10%, transparent);
-  backdrop-filter: blur(26px) saturate(138%);
+  backdrop-filter: blur(32px) saturate(150%);
 }
 
 @utility liquid-glass-nav {
   border-color: color-mix(in oklab, var(--glass-border) 76%, transparent);
   background: var(--glass-nav);
   box-shadow: 0 12px 36px -28px oklch(0.24 0.1 298 / 36%), inset 0 -1px 0 var(--glass-edge);
-  backdrop-filter: blur(24px) saturate(138%);
+  backdrop-filter: blur(30px) saturate(145%);
+}
+
+@utility prism-control {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow: 0 1px 0 oklch(1 0 0 / 92%) inset, 0 -1px 0 oklch(0.51 0.095 291 / 16%) inset, 0 10px 22px -14px oklch(0.29 0.04 291 / 36%);
+}
+
+@utility prism-control--primary {
+  background: linear-gradient(135deg, oklch(0.61 0.12 291), oklch(0.48 0.1 291) 54%, oklch(0.58 0.11 276));
+  box-shadow: 0 1px 0 oklch(1 0 0 / 48%) inset, 0 -2px 0 oklch(0.29 0.08 291 / 24%) inset, 0 14px 26px -14px oklch(0.42 0.12 291 / 52%);
+}
+
+@utility prismatic-shell {
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(135deg, oklch(0.88 0.04 291 / 82%), oklch(1 0 0 / 94%) 32%, oklch(0.83 0.05 260 / 62%) 68%, oklch(0.93 0.035 80 / 70%));
+  box-shadow: var(--shadow-glass-raised);
+}
+
+@utility optical-field {
+  background:
+    radial-gradient(circle at 12% 16%, oklch(0.88 0.04 291 / 70%), transparent 28%),
+    radial-gradient(circle at 84% 78%, oklch(0.82 0.06 80 / 42%), transparent 24%),
+    radial-gradient(circle at 70% 20%, oklch(0.9 0.03 220 / 48%), transparent 25%),
+    var(--background);
+}
+
+.prism-control::after {
+  content: "";
+  position: absolute;
+  inset: -30% auto -30% -45%;
+  z-index: -1;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 42%), transparent);
+  transform: skewX(-18deg);
+}
+
+@media (hover:hover) and (pointer:fine) {
+  .prism-control:hover::after { animation: prism-sweep 1.6s var(--e-glide); }
 }
 
 @utility liquid-glass-evidence {

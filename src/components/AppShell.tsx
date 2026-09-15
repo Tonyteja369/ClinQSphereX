@@ -45,8 +45,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="liquid-glass liquid-glass-nav sticky top-0 hidden h-screen w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 px-4 py-6 md:flex">
+    <div className="optical-field min-h-screen p-3 sm:p-5 md:flex md:gap-5">
+      <aside className="liquid-glass liquid-glass-nav sticky top-5 hidden h-[calc(100vh-2.5rem)] w-64 shrink-0 flex-col rounded-[2rem] px-4 py-6 md:flex">
         <Link to="/dashboard" className="px-1">
           <Wordmark />
         </Link>
@@ -57,10 +57,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                "motion-press flex items-center gap-2.5 rounded-full px-3 py-2.5 text-sm transition-[color,background-color,box-shadow,transform]",
                 pathname.startsWith(item.to)
-                  ? "bg-card font-medium text-primary shadow-[inset_0_0_0_1px_var(--border)]"
-                  : "text-muted-foreground hover:bg-card",
+                  ? "prism-control bg-card/75 font-semibold text-primary"
+                  : "text-muted-foreground hover:bg-card/55 hover:text-foreground",
               )}
             >
               <item.icon className="size-4" aria-hidden />
@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <nav aria-label="Workspace" className="liquid-glass liquid-glass-nav sticky top-0 z-20 flex items-center gap-3 overflow-x-auto rounded-none border-x-0 border-t-0 px-4 py-2 md:hidden">
+        <nav aria-label="Workspace" className="liquid-glass liquid-glass-nav sticky top-3 z-20 flex items-center gap-3 overflow-x-auto rounded-full px-4 py-2 md:hidden">
           {nav.map((item) => (
             <Link key={item.to} to={item.to} className="whitespace-nowrap text-sm">
               {item.label}
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Sign out
           </Button>
         </nav>
-        <main className="relative mx-auto w-full max-w-6xl flex-1 px-5 py-8 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-72 before:bg-[radial-gradient(circle_at_65%_0%,var(--violet-100),transparent_65%)]">{children}</main>
+        <main className="relative mx-auto w-full max-w-6xl flex-1 px-2 py-7 sm:px-4 md:px-6 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-72 before:bg-[radial-gradient(circle_at_65%_0%,var(--accent),transparent_65%)]">{children}</main>
       </div>
     </div>
   );

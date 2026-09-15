@@ -8,7 +8,7 @@ export function Monogram({ className }: { className?: string }) {
       aria-label="ClinQSphereX"
       className={cn("size-7", className)}
     >
-      <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7" className="fill-primary" />
+      <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="10" className="fill-primary" />
       <circle
         cx="16"
         cy="15.5"
@@ -39,7 +39,7 @@ export function Wordmark({
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       {showMark && <Monogram />}
-      <span className="font-display text-[1.05rem] font-semibold">
+      <span className="font-display text-[1.05rem] font-semibold tracking-normal">
         ClinQSphereX
       </span>
     </span>

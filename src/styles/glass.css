@@ -5,9 +5,9 @@
   pointer-events:none;
   contain:paint;
   background:
-    radial-gradient(circle at 18% 12%,color-mix(in srgb,var(--iris-500) 18%,transparent),transparent 34%),
-    radial-gradient(circle at 82% 78%,color-mix(in srgb,var(--aqua-500) 10%,transparent),transparent 32%),
-    radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--iris-300) 12%,transparent),transparent 38%),
+    radial-gradient(circle at 18% 12%,color-mix(in srgb,var(--iris-300) 24%,transparent),transparent 30%),
+    radial-gradient(circle at 82% 78%,color-mix(in srgb,var(--amber-500) 12%,transparent),transparent 30%),
+    radial-gradient(circle at 52% 48%,rgba(255,255,255,.82),transparent 42%),
     var(--paper);
   will-change:transform;
   animation:field-drift 40s ease-in-out infinite alternate;
@@ -17,7 +17,7 @@
   position:relative;
   isolation:isolate;
   background:var(--glass-tint);
-  backdrop-filter:blur(24px) saturate(180%);
+  backdrop-filter:blur(28px) saturate(145%);
   border:1px solid var(--glass-stroke);
   border-radius:var(--r-md);
   box-shadow:var(--glass-shadow);
@@ -30,7 +30,7 @@
   border-radius:inherit;
   pointer-events:none;
   padding:1px;
-  background:linear-gradient(140deg,rgba(255,255,255,.75),rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,var(--glass-edge));
+  background:linear-gradient(138deg,rgba(255,255,255,.98),rgba(255,255,255,.2) 29%,transparent 48%,rgba(154,145,203,.25) 72%,rgba(255,255,255,.86));
   mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   mask-composite:exclude;
 }
@@ -58,11 +58,11 @@
   content:"";
   position:absolute;
   inset:0;
-  z-index:-1;
+  z-index:0;
   border-radius:inherit;
   pointer-events:none;
   opacity:0;
-  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.14),transparent 42%);
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.58),transparent 38%);
   transition:opacity var(--t-fast) var(--e-glide);
 }
 
@@ -81,7 +81,7 @@
 
 @media (prefers-color-scheme:dark){
   .glass--solid{
-    background:var(--paper);
+    background:var(--white);
     border-color:var(--glass-stroke);
   }
 }
