@@ -56,7 +56,7 @@
 
 .motion-morph{view-transition-name:var(--morph-name,none)}
 
-.route-stage{min-height:100%;animation:route-arrive var(--t-slow) var(--e-settle) both}
+.route-stage{min-height:100%;animation:route-arrive var(--t-slow) var(--e-settle) backwards}
 .route-stage[data-navigating="true"]{opacity:.72;transition:opacity var(--t-fast) var(--e-exit)}
 
 .route-progress{
