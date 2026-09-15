@@ -28,14 +28,19 @@ function DiseasesIndex() {
   return (
     <>
       <main className="min-h-screen bg-transparent">
-        <section className="mx-auto max-w-6xl px-5 py-16">
-          <h1 className="font-display text-3xl font-semibold">Explore research by disease</h1>
-          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+        <section className="mx-auto max-w-6xl px-3 py-8 sm:px-5 sm:py-12">
+          <header className="disease-overview-head">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">Clinical research atlas</p>
+              <h1 className="mt-2 font-display text-3xl font-semibold sm:text-4xl">Explore research by disease</h1>
+            </div>
+            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Every disease area brings a different eligibility problem. Cardiovascular studies rest on
             routine measurements, oncology on subtype and prior treatment, stroke on timing, rare
             disease on very small populations. Each page shows live registry trials for that area and
             how protocol criteria become structured, checkable screening logic.
-          </p>
+            </p>
+          </header>
           <div className="mt-8">
             <SafetyBanner />
           </div>

@@ -44,11 +44,11 @@ function DiseasePage() {
   return (
     <>
       <main className="min-h-screen bg-transparent">
-        <section className="mx-auto max-w-6xl px-5 pb-10 pt-14">
+        <section className="mx-auto max-w-6xl px-3 pb-10 pt-8 sm:px-5 sm:pt-12">
           <Link to="/diseases" className="text-sm text-muted-foreground hover:text-foreground">
             ← All disease areas
           </Link>
-          <div className="mt-4 grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+           <div className="disease-clinical-hero mt-4 grid items-center gap-8 lg:grid-cols-[0.82fr_1.18fr]">
             <div>
               <h1 className="font-display text-3xl font-semibold sm:text-4xl">
                 {disease.name} Research Intelligence
@@ -58,15 +58,15 @@ function DiseasePage() {
               </p>
             </div>
             {visual && (
-              <figure className="surface-strong overflow-hidden rounded-2xl">
+              <figure className="organ-stage surface-strong overflow-hidden">
                 <img
                   src={visual.url}
                   alt={visual.alt}
                   width={1024}
                   height={1024}
-                  className="aspect-[4/3] w-full object-cover"
+                   className="organ-stage-image aspect-[4/3] w-full object-cover"
                 />
-                <figcaption className="border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
+                 <figcaption className="organ-stage-caption border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
                   Illustrative scientific visualization — not patient imagery or a clinical finding.
                 </figcaption>
               </figure>
