@@ -1,12 +1,16 @@
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@import "./styles/tokens.css";
+@import "./styles/glass.css";
+@import "./styles/motion.css";
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter Tight", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Tight", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --radius-sm: calc(var(--radius) - 3px);
   --radius-md: calc(var(--radius) - 1px);
   --radius-lg: var(--radius);
@@ -109,12 +113,10 @@
   --warm-signal: oklch(0.74 0.13 65);
   --glass: oklch(0.99 0.008 300 / 72%);
   --glass-dark: oklch(0.18 0.035 300 / 66%);
-  --glass-tint: oklch(0.99 0.012 300 / 78%);
   --glass-tint-strong: oklch(0.985 0.016 300 / 88%);
   --glass-evidence: oklch(0.975 0.024 298 / 84%);
   --glass-nav: oklch(0.99 0.01 300 / 82%);
   --glass-border: oklch(0.79 0.08 298 / 32%);
-  --glass-edge: oklch(1 0 0 / 78%);
   --glass-highlight: oklch(1 0 0 / 62%);
   --glass-overlay: oklch(0.12 0.025 300 / 58%);
   --shadow-glass: 0 18px 52px -28px oklch(0.26 0.1 298 / 36%), 0 5px 16px -10px oklch(0.2 0.06 300 / 20%);
@@ -138,12 +140,10 @@
   --border: oklch(0.32 0.03 300);
   --input: oklch(0.34 0.03 300);
   --surface-soft: oklch(0.21 0.025 300);
-  --glass-tint: oklch(0.24 0.035 300 / 78%);
   --glass-tint-strong: oklch(0.27 0.04 300 / 88%);
   --glass-evidence: oklch(0.25 0.05 298 / 84%);
   --glass-nav: oklch(0.2 0.03 300 / 84%);
   --glass-border: oklch(0.72 0.09 298 / 26%);
-  --glass-edge: oklch(1 0 0 / 18%);
   --glass-highlight: oklch(1 0 0 / 20%);
 }
 

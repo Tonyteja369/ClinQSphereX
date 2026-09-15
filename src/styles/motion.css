@@ -1,0 +1,55 @@
+@keyframes field-drift{
+  from{transform:translate3d(-1.5%,0,0)}
+  to{transform:translate3d(1.5%,1%,0)}
+}
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@keyframes morph-fade{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+.motion-rise{
+  animation:rise var(--t-base) var(--e-glide) both;
+}
+
+.motion-rise-list>:nth-child(2){animation-delay:40ms}
+.motion-rise-list>:nth-child(3){animation-delay:80ms}
+.motion-rise-list>:nth-child(4){animation-delay:120ms}
+.motion-rise-list>:nth-child(5){animation-delay:160ms}
+.motion-rise-list>:nth-child(6){animation-delay:200ms}
+
+.motion-lift{
+  transition:transform var(--t-fast) var(--e-glide),filter var(--t-fast) var(--e-glide);
+}
+
+.motion-lift:hover,.motion-lift:focus-visible{
+  transform:translateY(-2px);
+  filter:brightness(1.02);
+}
+
+.motion-press:active{
+  transform:scale(.985);
+  transition:transform var(--t-fast) var(--e-exit);
+}
+
+.motion-morph{view-transition-name:var(--morph-name,none)}
+
+::view-transition-old(root){animation:morph-fade var(--t-slow) var(--e-exit) reverse}
+::view-transition-new(root){animation:morph-fade var(--t-slow) var(--e-settle)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important;
+  }
+
+  .light-field{animation:none;will-change:auto}
+  .glass--react::after{display:none}
+}
