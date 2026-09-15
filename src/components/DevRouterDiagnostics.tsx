@@ -24,13 +24,13 @@ function looksLikeRouterContextFailure(error: Error) {
  * in production builds.
  */
 export class DevRouterDiagnostics extends Component<Props, State> {
-  state: State = { error: null, info: null };
+  override state: State = { error: null, info: null };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     if (!import.meta.env.DEV) return;
     const routerContextFailure = looksLikeRouterContextFailure(error);
     const details = {
@@ -60,7 +60,7 @@ export class DevRouterDiagnostics extends Component<Props, State> {
     this.setState({ info: info.componentStack ?? null });
   }
 
-  render() {
+  override render() {
     const { error, info } = this.state;
     if (!error) return this.props.children;
     if (!import.meta.env.DEV) throw error;
