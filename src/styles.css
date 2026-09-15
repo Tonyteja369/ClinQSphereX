@@ -258,10 +258,165 @@
 
 @utility optical-field {
   background:
-    radial-gradient(circle at 12% 16%, oklch(0.88 0.04 291 / 70%), transparent 28%),
-    radial-gradient(circle at 84% 78%, oklch(0.82 0.06 80 / 42%), transparent 24%),
-    radial-gradient(circle at 70% 20%, oklch(0.9 0.03 220 / 48%), transparent 25%),
+    radial-gradient(ellipse at 16% 28%, oklch(0.84 0.08 235 / 60%), transparent 30%),
+    radial-gradient(ellipse at 82% 76%, oklch(0.79 0.09 225 / 42%), transparent 28%),
+    radial-gradient(ellipse at 68% 14%, oklch(0.9 0.03 220 / 52%), transparent 24%),
     var(--background);
+}
+
+.app-workspace {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+}
+
+.app-workspace::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    conic-gradient(from 205deg at 38% 66%, transparent 0 15%, color-mix(in oklab, var(--primary) 16%, transparent) 20%, color-mix(in oklab, var(--glass-highlight) 64%, transparent) 27%, transparent 34%),
+    radial-gradient(ellipse at 44% 62%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 38%);
+  filter: blur(22px) saturate(118%);
+  opacity: .8;
+}
+
+.workspace-taskbar {
+  position: fixed;
+  inset: 12px auto 12px 10px;
+  z-index: 60;
+  display: flex;
+  width: 64px;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 24px;
+  overflow: hidden;
+  transition: width var(--t-slow) var(--e-settle), box-shadow var(--t-base) var(--e-glide);
+}
+
+.workspace-taskbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(118deg, var(--glass-highlight), transparent 20%, transparent 68%, color-mix(in oklab, var(--primary) 18%, transparent));
+  opacity: .7;
+}
+
+.taskbar-brand {
+  display: grid;
+  grid-template-columns: 46px minmax(0,1fr) 36px;
+  align-items: center;
+  min-height: 50px;
+}
+
+.taskbar-mark,
+.taskbar-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 44px;
+  flex: none;
+}
+
+.taskbar-mark { border-radius: 16px; }
+.taskbar-mark:hover { background: color-mix(in oklab, var(--card) 68%, transparent); }
+.taskbar-brand-copy { min-width: 0; opacity: 0; transform: translateX(-8px); transition: opacity var(--t-base), transform var(--t-base); }
+.taskbar-brand-copy > span:last-child { display: block; margin-top: 2px; color: var(--muted-foreground); font-size: .68rem; white-space: nowrap; }
+.taskbar-toggle { opacity: 0; pointer-events: none; }
+
+.taskbar-nav {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-block: 12px;
+  scrollbar-width: none;
+}
+.taskbar-nav::-webkit-scrollbar { display: none; }
+
+.taskbar-item {
+  display: flex;
+  min-height: 44px;
+  width: 100%;
+  flex: none;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 15px;
+  color: var(--muted-foreground);
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.taskbar-item:hover { color: var(--foreground); background: color-mix(in oklab, var(--card) 58%, transparent); }
+.taskbar-item--active {
+  color: var(--primary);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, var(--card)), var(--glass-tint-strong));
+  box-shadow: inset 1px 1px 0 var(--glass-highlight), inset -1px -1px 0 var(--glass-edge), 0 10px 22px -17px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+.taskbar-item--active .taskbar-icon { transform: scale(1.06); }
+.taskbar-icon svg { width: 18px; height: 18px; }
+.taskbar-label { min-width: 0; opacity: 0; font-size: .82rem; font-weight: 560; transition: opacity var(--t-fast) var(--e-glide); }
+.taskbar-signout { margin-top: 4px; }
+
+.workspace-canvas {
+  min-width: 0;
+  padding-left: 76px;
+  transition: padding-left var(--t-slow) var(--e-settle);
+}
+
+.disease-overview-head {
+  display: grid;
+  gap: 20px;
+  align-items: end;
+}
+
+.disease-card { border-radius: 24px; }
+.disease-card-visual::after,
+.organ-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(118deg, color-mix(in oklab, var(--glass-highlight) 78%, transparent), transparent 28%, transparent 70%, color-mix(in oklab, var(--primary) 12%, transparent));
+  mix-blend-mode: soft-light;
+}
+.disease-card-reflection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--background), transparent 55%);
+  opacity: .74;
+}
+.organ-stage { position: relative; border-radius: 30px; }
+.organ-stage-image { filter: saturate(.88) contrast(.96); transition: transform var(--t-hero) var(--e-settle), filter var(--t-base); }
+.organ-stage:hover .organ-stage-image { transform: scale(1.018); filter: saturate(1) contrast(.98); }
+.organ-stage-caption { position: relative; z-index: 2; background: color-mix(in oklab, var(--glass-tint-strong) 88%, transparent); backdrop-filter: blur(18px); }
+
+@media (min-width: 48rem) {
+  .workspace-taskbar { inset: 20px auto 20px 18px; }
+  .workspace-taskbar--open { width: 238px; padding: 10px; border-radius: 28px; }
+  .workspace-taskbar--open .taskbar-brand-copy,
+  .workspace-taskbar--open .taskbar-label { opacity: 1; transform: translateX(0); }
+  .workspace-taskbar--open .taskbar-toggle { opacity: 1; pointer-events: auto; }
+  .workspace-taskbar--open .taskbar-item { padding-right: 12px; }
+  .workspace-canvas { padding-left: 90px; }
+  .workspace-canvas--rail-open { padding-left: 264px; }
+  .disease-overview-head { grid-template-columns: minmax(0, .85fr) minmax(20rem, 1.15fr); }
+}
+
+@media (max-width: 47.999rem) {
+  .workspace-taskbar { box-shadow: var(--shadow-glass-raised), inset 1px 1px 0 var(--glass-highlight); }
+  .taskbar-brand { grid-template-columns: 46px; }
+  .taskbar-brand-copy, .taskbar-toggle { display: none; }
 }
 
 .prism-control::after {
