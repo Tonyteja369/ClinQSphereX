@@ -11,13 +11,17 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   ShieldCheck,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Wordmark } from "@/components/Wordmark";
+import { Monogram } from "@/components/Wordmark";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -37,6 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isNavigating = useRouterState({ select: (s) => s.status === "pending" });
+  const [railOpen, setRailOpen] = useState(true);
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -46,63 +51,65 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="optical-field min-h-screen p-3 sm:p-5 md:flex md:gap-5">
+    <TooltipProvider delayDuration={120}>
+    <div className="optical-field app-workspace min-h-screen">
       <div
         aria-hidden
         className={cn("route-progress", isNavigating && "route-progress--active")}
       />
-      <aside className="liquid-glass liquid-glass-nav sticky top-5 hidden h-[calc(100vh-2.5rem)] w-64 shrink-0 flex-col rounded-[2rem] px-4 py-6 md:flex">
-        <Link to="/dashboard" className="px-1">
-          <Wordmark />
-        </Link>
-        <p className="mt-1 px-1 text-xs text-muted-foreground">Research operations</p>
-        <nav className="mt-8 flex flex-1 flex-col gap-1">
+      <aside className={cn("workspace-taskbar liquid-glass liquid-glass-nav", railOpen && "workspace-taskbar--open")}>
+        <div className="taskbar-brand">
+          <Link to="/dashboard" aria-label="ClinQSphereX dashboard" className="taskbar-mark motion-press">
+            <Monogram className="size-8" />
+          </Link>
+          <div className="taskbar-brand-copy">
+            <Wordmark showMark={false} />
+            <span>Research operations</span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="taskbar-toggle hidden md:inline-flex"
+            onClick={() => setRailOpen((open) => !open)}
+            aria-label={railOpen ? "Collapse taskbar" : "Expand taskbar"}
+          >
+            {railOpen ? <PanelLeftClose aria-hidden /> : <PanelLeftOpen aria-hidden />}
+          </Button>
+        </div>
+        <nav aria-label="Research workspace" className="taskbar-nav">
           {nav.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "motion-press nav-prism flex items-center gap-2.5 rounded-full px-3 py-2.5 text-sm transition-[color,background-color,box-shadow,transform]",
-                pathname.startsWith(item.to)
-                  ? "prism-control bg-card/75 font-semibold text-primary"
-                  : "text-muted-foreground hover:bg-card/55 hover:text-foreground",
-              )}
-            >
-              <item.icon className="size-4" aria-hidden />
-              {item.label}
-            </Link>
+            <Tooltip key={item.to}>
+              <TooltipTrigger asChild>
+                <Link
+                  to={item.to}
+                  aria-label={item.label}
+                  aria-current={pathname.startsWith(item.to) ? "page" : undefined}
+                  className={cn("taskbar-item motion-press nav-prism", pathname.startsWith(item.to) && "taskbar-item--active prism-control")}
+                >
+                  <span className="taskbar-icon"><item.icon aria-hidden /></span>
+                  <span className="taskbar-label">{item.label}</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={12} className={railOpen ? "md:hidden" : undefined}>{item.label}</TooltipContent>
+            </Tooltip>
           ))}
         </nav>
-        <Button
-          variant="ghost"
-          onClick={signOut}
-          className="justify-start px-3 text-muted-foreground"
-        >
-          <LogOut className="size-4" aria-hidden />
-          Sign out
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" onClick={signOut} className="taskbar-item taskbar-signout">
+              <span className="taskbar-icon"><LogOut aria-hidden /></span>
+              <span className="taskbar-label">Sign out</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={12} className={railOpen ? "md:hidden" : undefined}>Sign out</TooltipContent>
+        </Tooltip>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <nav aria-label="Workspace" className="liquid-glass liquid-glass-nav sticky top-3 z-20 flex items-center gap-3 overflow-x-auto rounded-full px-4 py-2 md:hidden">
-          {nav.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "motion-press nav-prism whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-muted-foreground",
-                pathname.startsWith(item.to) && "prism-control bg-card/75 font-semibold text-primary",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <Button onClick={signOut} variant="ghost" size="sm" className="whitespace-nowrap text-muted-foreground">
-            Sign out
-          </Button>
-        </nav>
-        <main className="app-page relative mx-auto w-full max-w-6xl flex-1 px-2 py-7 sm:px-4 md:px-6 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-72 before:bg-[radial-gradient(circle_at_65%_0%,var(--accent),transparent_65%)]">{children}</main>
+      <div className={cn("workspace-canvas", railOpen && "workspace-canvas--rail-open")}>
+        <main className="app-page relative mx-auto w-full max-w-6xl flex-1 px-3 py-7 sm:px-5 md:px-6">{children}</main>
       </div>
     </div>
+    </TooltipProvider>
   );
 }

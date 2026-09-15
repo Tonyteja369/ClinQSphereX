@@ -1,6 +1,8 @@
 # ClinQSphereX roadmap
 
 ## Current — Prismatic Ivory Nexus redesign
+- [x] Rebuild authenticated navigation as a reflective collapsible vertical taskbar on desktop and mobile
+- [x] Refine disease browsing and detail views into organ-led clinical workspaces
 - [x] Extend optical glass, reflections and accessible route transitions across every remaining page
 - [x] Apply the selected ivory-violet optical glass system across shared controls and surfaces
 - [x] Recompose authentication and the authenticated shell around floating tactile workspaces

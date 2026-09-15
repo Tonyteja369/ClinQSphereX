@@ -5,25 +5,22 @@ import { diseaseVisual } from "@/lib/disease-visuals";
 export function DiseaseExplorer({ limit }: { limit?: number }) {
   const items = limit ? diseases.slice(0, limit) : diseases;
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <ul className="disease-gallery grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((d) => {
         const visual = diseaseVisual(d.slug);
         return (
-          <li key={d.slug} className="surface lift flex flex-col overflow-hidden">
+          <li key={d.slug} className="disease-card surface lift flex flex-col overflow-hidden">
             {visual && (
-              <div className="relative aspect-[16/10] overflow-hidden bg-secondary">
+              <div className="disease-card-visual relative aspect-[16/10] overflow-hidden bg-secondary">
                 <img
                   src={visual.url}
                   alt={visual.alt}
                   width={1024}
                   height={1024}
                   loading="lazy"
-                  className="size-full object-cover transition-transform duration-700 ease-out hover:scale-[1.04]"
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                 />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent"
-                  aria-hidden
-                />
+                <div className="disease-card-reflection" aria-hidden />
               </div>
             )}
             <div className="flex flex-1 flex-col p-5">
@@ -42,7 +39,7 @@ export function DiseaseExplorer({ limit }: { limit?: number }) {
               <Link
                 to="/diseases/$slug"
                 params={{ slug: d.slug }}
-                className="mt-4 text-sm font-medium text-primary hover:underline"
+                className="nav-prism mt-4 inline-flex w-fit rounded-full border border-border/70 bg-card/70 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-card"
               >
                 Explore {d.short} →
               </Link>
