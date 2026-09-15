@@ -3,7 +3,7 @@
 ## Current — Prismatic Ivory Nexus redesign
 - [x] Apply the selected ivory-violet optical glass system across shared controls and surfaces
 - [x] Recompose authentication and the authenticated shell around floating tactile workspaces
-- [ ] Verify the entry experience and dashboard at desktop and mobile sizes
+- [x] Verify the entry experience and dashboard at desktop and mobile sizes
 
 ## Done — real public research sources
 - [x] Genomic Intelligence Engine at /genomics: live NCBI E-utilities, PubMed, UniProt, ClinicalTrials.gov
