@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Wordmark } from "@/components/Wordmark";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 import authVideoAsset from "@/assets/clinqspherex-auth-landscape.mp4.asset.json";
 import authPosterAsset from "@/assets/clinqspherex-auth-landscape-poster.jpg.asset.json";
 
@@ -140,8 +140,8 @@ function AuthPage() {
        <div className="auth-prism auth-prism-one" aria-hidden />
        <div className="auth-prism auth-prism-two" aria-hidden />
 
-       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-12">
-        <div className="flex items-center justify-between">
+        <div className="auth-layout relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-12">
+         <div className="auth-topbar flex items-center justify-between">
            <Link to="/" className="text-foreground" aria-label="ClinQSphereX home">
             <Wordmark />
           </Link>
@@ -151,14 +151,14 @@ function AuthPage() {
           </div>
         </div>
 
-         <div className="flex flex-1 items-center justify-center py-10">
-           <div className="auth-prismatic-frame motion-rise w-full max-w-[31rem] rounded-[2.6rem] p-[2px]">
-           <GlassPanel variant="elevated" className="auth-glass-panel w-full rounded-[2.5rem] p-7 sm:p-10">
-             <div className="mb-8 flex flex-col items-center text-center">
+          <div className="auth-stage flex flex-1 items-center justify-center py-10">
+            <div className="auth-prismatic-frame motion-rise w-full max-w-[31rem] rounded-[2.6rem] p-[2px]">
+            <GlassPanel variant="elevated" className="auth-glass-panel w-full rounded-[2.5rem] p-7 sm:p-10">
+              <div className="auth-welcome mb-8 flex flex-col items-center text-center">
                <div className="auth-mark motion-lift mb-5 grid size-16 place-items-center rounded-[1.4rem]">
                  <ShieldCheck className="size-7 text-primary" aria-hidden />
                </div>
-               <p className="text-xs font-semibold uppercase text-primary">Biomedical research gateway</p>
+                <p className="auth-eyebrow text-xs font-semibold uppercase text-primary">Biomedical research gateway</p>
                <h1 className="mt-2 text-3xl font-semibold text-foreground">
                  {mode === "signin" ? "Researcher sign in" : "Create your account"}
                </h1>
@@ -171,10 +171,11 @@ function AuthPage() {
 
         <form onSubmit={submit} className="mt-7 space-y-4">
           {mode === "signup" && (
-            <div>
+            <div className="auth-field">
                <label htmlFor="name" className="ml-3 text-sm font-medium text-foreground">
                 Full name
               </label>
+              <span className="auth-field-icon" aria-hidden><UserRound /></span>
               <input
                 id="name"
                 value={fullName}
@@ -183,10 +184,11 @@ function AuthPage() {
               />
             </div>
           )}
-          <div>
+          <div className="auth-field">
              <label htmlFor="email" className="ml-3 text-sm font-medium text-foreground">
                Research identifier
             </label>
+            <span className="auth-field-icon" aria-hidden><Mail /></span>
             <input
               id="email"
               type="email"
@@ -197,11 +199,12 @@ function AuthPage() {
                className="auth-input mt-1.5 w-full rounded-full px-5 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-ring"
             />
           </div>
-          <div>
+          <div className="auth-field">
              <label htmlFor="password" className="ml-3 text-sm font-medium text-foreground">
                Security token
             </label>
-            <input
+             <span className="auth-field-icon" aria-hidden><LockKeyhole /></span>
+             <input
               id="password"
               type="password"
               required
