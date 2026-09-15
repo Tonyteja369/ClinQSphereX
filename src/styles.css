@@ -372,6 +372,13 @@
 
 .route-stage table tbody tr:hover { background: color-mix(in oklab, var(--accent) 26%, transparent); }
 
+.route-stage button:not([role="switch"]) {
+  border-radius: 999px;
+  transition: transform var(--t-fast) var(--e-glide), box-shadow var(--t-fast) var(--e-glide), filter var(--t-fast) var(--e-glide);
+}
+
+.route-stage button:not([role="switch"]):active { transform: translateY(1px) scale(.985); }
+
 @utility surface-strong {
   position: relative;
   overflow: hidden;
@@ -383,6 +390,8 @@
 }
 
 @utility surface-soft {
+  position: relative;
+  overflow: hidden;
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
