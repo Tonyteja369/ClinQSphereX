@@ -1,0 +1,68 @@
+:root{
+  /* ---- base palette: violet + white, with a cold-lab counterweight ---- */
+  --ink-900:#120C26;
+  --ink-700:#2A1E52;
+  --ink-500:#4A3A82;
+  --ink-300:#8C82B8;
+
+  --iris-700:#5B21B6;
+  --iris-600:#6D28D9;
+  --iris-500:#7C4DFF;
+  --iris-300:#B49CFF;
+  --iris-100:#EDE7FF;
+
+  --aqua-500:#22C7C7;
+  --mint-500:#17B98A;
+  --amber-500:#E8963C;
+  --rose-500:#E4586F;
+
+  --white:#FFFFFF;
+  --paper:#F7F5FF;
+  --glass-tint:rgba(255,255,255,.58);
+  --glass-tint-2:rgba(255,255,255,.40);
+  --glass-tint-3:rgba(255,255,255,.26);
+  --glass-stroke:rgba(255,255,255,.72);
+  --glass-edge:rgba(109,40,217,.16);
+  --glass-shadow:0 1px 1px rgba(18,12,38,.04),
+                 0 8px 24px -12px rgba(18,12,38,.18),
+                 0 24px 64px -32px rgba(91,33,182,.26);
+
+  --r-sm:10px;
+  --r-md:18px;
+  --r-lg:28px;
+
+  --e-glide:cubic-bezier(.32,.72,0,1);
+  --e-settle:cubic-bezier(.16,1,.3,1);
+  --e-exit:cubic-bezier(.4,0,1,1);
+  --t-fast:160ms;
+  --t-base:260ms;
+  --t-slow:420ms;
+  --t-hero:720ms;
+
+  --fs-display:clamp(2.1rem,1.4rem + 2.2vw,3.05rem);
+  --fs-h1:clamp(1.65rem,1.3rem + 1.1vw,2.1rem);
+  --fs-h2:1.45rem;
+  --fs-h3:1.15rem;
+  --fs-body:0.975rem;
+  --fs-sm:0.875rem;
+  --fs-xs:0.78rem;
+  --lh-tight:1.12;
+  --lh-body:1.55;
+}
+
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0B0718;
+    --ink-900:#F4F1FF;
+    --ink-700:#DCD4FA;
+    --ink-500:#A79BD6;
+    --ink-300:#6E62A0;
+    --glass-tint:rgba(36,24,72,.56);
+    --glass-tint-2:rgba(36,24,72,.38);
+    --glass-tint-3:rgba(36,24,72,.24);
+    --glass-stroke:rgba(180,156,255,.22);
+    --glass-edge:rgba(180,156,255,.14);
+    --glass-shadow:0 1px 1px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6),
+                   0 30px 80px -40px rgba(91,33,182,.55);
+  }
+}

@@ -1,0 +1,87 @@
+.light-field{
+  position:fixed;
+  inset:-12vmax;
+  z-index:-2;
+  pointer-events:none;
+  contain:paint;
+  background:
+    radial-gradient(circle at 18% 12%,color-mix(in srgb,var(--iris-500) 18%,transparent),transparent 34%),
+    radial-gradient(circle at 82% 78%,color-mix(in srgb,var(--aqua-500) 10%,transparent),transparent 32%),
+    radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--iris-300) 12%,transparent),transparent 38%),
+    var(--paper);
+  will-change:transform;
+  animation:field-drift 40s ease-in-out infinite alternate;
+}
+
+.glass{
+  position:relative;
+  isolation:isolate;
+  background:var(--glass-tint);
+  backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-stroke);
+  border-radius:var(--r-md);
+  box-shadow:var(--glass-shadow);
+}
+
+.glass::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  padding:1px;
+  background:linear-gradient(140deg,rgba(255,255,255,.75),rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,var(--glass-edge));
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+}
+
+.glass--thin{
+  background:var(--glass-tint-3);
+  backdrop-filter:blur(14px) saturate(160%);
+}
+
+.glass--shell{
+  border-radius:var(--r-lg);
+  backdrop-filter:blur(40px) saturate(190%);
+}
+
+.glass--solid{
+  background:var(--white);
+  backdrop-filter:none;
+  border:1px solid var(--iris-100);
+  border-radius:var(--r-md);
+  box-shadow:none;
+  color:var(--ink-900);
+}
+
+.glass--react::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:0;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.14),transparent 42%);
+  transition:opacity var(--t-fast) var(--e-glide);
+}
+
+@media (hover:hover) and (pointer:fine){
+  .glass--react:hover::after,.glass--react:focus-within::after{opacity:1}
+}
+
+.glass-data{
+  font-variant-numeric:tabular-nums;
+}
+
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--iris-500);
+  outline-offset:3px;
+}
+
+@media (prefers-color-scheme:dark){
+  .glass--solid{
+    background:var(--paper);
+    border-color:var(--glass-stroke);
+  }
+}
