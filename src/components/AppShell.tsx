@@ -36,6 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isNavigating = useRouterState({ select: (s) => s.status === "pending" });
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -46,6 +47,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="optical-field min-h-screen p-3 sm:p-5 md:flex md:gap-5">
+      <div
+        aria-hidden
+        className={cn("route-progress", isNavigating && "route-progress--active")}
+      />
       <aside className="liquid-glass liquid-glass-nav sticky top-5 hidden h-[calc(100vh-2.5rem)] w-64 shrink-0 flex-col rounded-[2rem] px-4 py-6 md:flex">
         <Link to="/dashboard" className="px-1">
           <Wordmark />
@@ -57,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "motion-press flex items-center gap-2.5 rounded-full px-3 py-2.5 text-sm transition-[color,background-color,box-shadow,transform]",
+                "motion-press nav-prism flex items-center gap-2.5 rounded-full px-3 py-2.5 text-sm transition-[color,background-color,box-shadow,transform]",
                 pathname.startsWith(item.to)
                   ? "prism-control bg-card/75 font-semibold text-primary"
                   : "text-muted-foreground hover:bg-card/55 hover:text-foreground",
@@ -81,7 +86,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <nav aria-label="Workspace" className="liquid-glass liquid-glass-nav sticky top-3 z-20 flex items-center gap-3 overflow-x-auto rounded-full px-4 py-2 md:hidden">
           {nav.map((item) => (
-            <Link key={item.to} to={item.to} className="whitespace-nowrap text-sm">
+            <Link
+              key={item.to}
+              to={item.to}
+              className={cn(
+                "motion-press nav-prism whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-muted-foreground",
+                pathname.startsWith(item.to) && "prism-control bg-card/75 font-semibold text-primary",
+              )}
+            >
               {item.label}
             </Link>
           ))}
@@ -89,7 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Sign out
           </Button>
         </nav>
-        <main className="relative mx-auto w-full max-w-6xl flex-1 px-2 py-7 sm:px-4 md:px-6 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-72 before:bg-[radial-gradient(circle_at_65%_0%,var(--accent),transparent_65%)]">{children}</main>
+        <main className="app-page relative mx-auto w-full max-w-6xl flex-1 px-2 py-7 sm:px-4 md:px-6 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-72 before:bg-[radial-gradient(circle_at_65%_0%,var(--accent),transparent_65%)]">{children}</main>
       </div>
     </div>
   );

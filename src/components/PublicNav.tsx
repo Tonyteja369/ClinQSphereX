@@ -12,7 +12,7 @@ const links = [
 
 export function PublicNav() {
   return (
-    <header className="liquid-glass liquid-glass-nav sticky top-0 z-30 rounded-none border-x-0 border-t-0">
+    <header className="liquid-glass liquid-glass-nav sticky top-3 z-30 mx-3 rounded-full">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
         <Link to="/" aria-label="ClinQSphereX home">
           <Wordmark />
@@ -23,14 +23,14 @@ export function PublicNav() {
               key={l.to}
               to={l.to}
               activeProps={{ className: "text-foreground font-medium" }}
-              className="hidden rounded px-2 py-1 text-sm text-muted-foreground hover:text-foreground sm:block"
+               className="nav-prism motion-press hidden rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground sm:block"
             >
               {l.label}
             </Link>
           ))}
           <Link
             to="/auth"
-            className="rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            className="prism-control prism-control--primary motion-press rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Researcher Sign In
           </Link>

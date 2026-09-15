@@ -66,6 +66,28 @@
   transition:opacity var(--t-fast) var(--e-glide);
 }
 
+.nav-prism{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+
+.nav-prism::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:inherit;
+  opacity:0;
+  background:linear-gradient(112deg,transparent 12%,rgba(255,255,255,.64) 42%,color-mix(in srgb,var(--iris-300) 22%,transparent) 58%,transparent 82%);
+  transform:translateX(-46%);
+  transition:opacity var(--t-fast) var(--e-glide),transform var(--t-base) var(--e-settle);
+}
+
+@media (hover:hover) and (pointer:fine){
+  .nav-prism:hover::after,.nav-prism:focus-visible::after{opacity:1;transform:translateX(18%)}
+}
+
 @media (hover:hover) and (pointer:fine){
   .glass--react:hover::after,.glass--react:focus-within::after{opacity:1}
 }

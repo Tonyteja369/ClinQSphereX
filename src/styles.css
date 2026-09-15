@@ -309,6 +309,69 @@
   backdrop-filter: blur(18px) saturate(132%);
 }
 
+.surface::before,
+.surface-strong::before,
+.surface-soft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: linear-gradient(138deg, var(--glass-highlight), transparent 34%, color-mix(in oklab, var(--primary) 18%, transparent) 70%, var(--glass-edge));
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.surface > *, .surface-strong > *, .surface-soft > * { position: relative; z-index: 1; }
+
+.route-stage :where(.surface, .surface-strong, .surface-soft, .liquid-glass-card) {
+  transition: transform var(--t-base) var(--e-glide), box-shadow var(--t-base) var(--e-glide), border-color var(--t-base) var(--e-glide);
+}
+
+@media (hover:hover) and (pointer:fine) {
+  .route-stage :where(a.surface, .lift, .motion-lift):hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--primary) 28%, var(--glass-border));
+    box-shadow: var(--shadow-glass-raised);
+  }
+}
+
+.app-page > :where(div, section, main) > header:first-child,
+.app-page > header:first-child {
+  animation: rise var(--t-slow) var(--e-settle) both;
+}
+
+.route-stage :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: 999px;
+  border-color: var(--glass-border);
+  background: color-mix(in oklab, var(--glass-tint-strong) 86%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 10px 24px -22px color-mix(in oklab, var(--foreground) 32%, transparent);
+  backdrop-filter: blur(16px) saturate(130%);
+  transition: border-color var(--t-fast) var(--e-glide), box-shadow var(--t-fast) var(--e-glide), background var(--t-fast) var(--e-glide);
+}
+
+.route-stage textarea { border-radius: var(--r-sm); }
+
+.route-stage :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+  border-color: color-mix(in oklab, var(--primary) 52%, var(--glass-border));
+  background: var(--glass-tint-strong);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 14%, transparent), inset 0 1px 0 var(--glass-highlight);
+  outline: none;
+}
+
+.route-stage table thead {
+  background: color-mix(in oklab, var(--accent) 58%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.route-stage table tbody tr {
+  transition: background-color var(--t-fast) var(--e-glide);
+}
+
+.route-stage table tbody tr:hover { background: color-mix(in oklab, var(--accent) 26%, transparent); }
+
 @utility surface-strong {
   position: relative;
   overflow: hidden;

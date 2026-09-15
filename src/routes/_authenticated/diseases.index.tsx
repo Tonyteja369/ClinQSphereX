@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/diseases/")({
 function DiseasesIndex() {
   return (
     <>
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen bg-transparent">
         <section className="mx-auto max-w-6xl px-5 py-16">
           <h1 className="font-display text-3xl font-semibold">Explore research by disease</h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">

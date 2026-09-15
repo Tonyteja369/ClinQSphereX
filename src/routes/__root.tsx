@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -125,6 +126,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const location = useRouterState({ select: (state) => state.location });
+  const isNavigating = useRouterState({ select: (state) => state.status === "pending" });
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -138,7 +141,13 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div
+        key={location.pathname}
+        className="route-stage"
+        data-navigating={isNavigating ? "true" : "false"}
+      >
+        <Outlet />
+      </div>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
