@@ -6,6 +6,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { ResearchMap } from "@/components/ResearchMap";
 import { useState } from "react";
 import { Activity, ClipboardCheck, FlaskConical, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -120,8 +121,9 @@ function Dashboard() {
             <>
               <div className="pipeline-columns" role="img" aria-label="Candidate pipeline by stage">
                 {pipelineEntries.map(([status, count], index) => (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     key={status}
                     className={`pipeline-column ${selectedStage === status ? "pipeline-column--active" : ""}`}
                     onClick={() => setSelectedStage((current) => current === status ? null : status)}
@@ -131,7 +133,7 @@ function Dashboard() {
                     <span className="pipeline-column-value">{count}</span>
                     <span className={`pipeline-column-bar pipeline-column-bar--${index % 4}`} style={{ height: `${Math.max(16, candidateTotal ? (count / candidateTotal) * 100 : 0)}%` }} />
                     <span className="pipeline-column-label">{status}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
               <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-3">

@@ -4,7 +4,7 @@
 - [x] Recompose mobile sign-in and sign-up from the supplied clean lavender references
 - [x] Apply the mobile application language across authenticated pages and bottom navigation
 - [x] Recompose the desktop Dashboard from live workspace values with interactive visualizations
-- [ ] Verify core routes on narrow mobile and desktop viewports
+- [x] Verify core routes on narrow mobile and desktop viewports
 
 ## Current — Prismatic Ivory Nexus redesign
 - [x] Rebuild authenticated navigation as a reflective collapsible vertical taskbar on desktop and mobile

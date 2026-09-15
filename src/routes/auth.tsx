@@ -184,7 +184,7 @@ function AuthPage() {
               />
             </div>
           )}
-          <div>
+          <div className="auth-field">
              <label htmlFor="email" className="ml-3 text-sm font-medium text-foreground">
                Research identifier
             </label>
@@ -199,7 +199,7 @@ function AuthPage() {
                className="auth-input mt-1.5 w-full rounded-full px-5 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-ring"
             />
           </div>
-          <div>
+          <div className="auth-field">
              <label htmlFor="password" className="ml-3 text-sm font-medium text-foreground">
                Security token
             </label>

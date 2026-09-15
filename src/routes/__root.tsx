@@ -128,7 +128,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const location = useRouterState({ select: (state) => state.location });
-  const isNavigating = useRouterState({ select: (state) => state.status === "pending" });
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -145,7 +144,6 @@ function RootComponent() {
       <div
         key={location.pathname}
         className="route-stage"
-        data-navigating={isNavigating ? "true" : "false"}
       >
         <DevRouterDiagnostics>
           <Outlet />
