@@ -111,6 +111,9 @@
   --hero-muted: oklch(0.5 0.018 286);
   --hero-accent: oklch(0.59 0.1 291);
   --warm-signal: oklch(0.74 0.13 65);
+  --lavender-field: oklch(0.94 0.035 295);
+  --lavender-surface: oklch(0.985 0.01 295 / 92%);
+  --coral-signal: oklch(0.68 0.14 26);
   --glass: oklch(1 0 0 / 52%);
   --glass-dark: oklch(0.38 0.06 291 / 78%);
   --glass-tint-strong: oklch(1 0 0 / 76%);
@@ -282,6 +285,55 @@
   filter: blur(22px) saturate(118%);
   opacity: .8;
 }
+
+.dashboard-metric-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  align-self: start;
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  color: var(--primary);
+  background: color-mix(in oklab, var(--accent) 68%, var(--card));
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+.dashboard-metric-icon svg { width: 1.1rem; height: 1.1rem; }
+.dashboard-chart-total { min-width: 5rem; }
+.dashboard-chart-total strong { display: block; color: var(--foreground); font-size: 1.55rem; line-height: 1; }
+.dashboard-chart-total span { display: block; max-width: 8rem; margin-top: .3rem; overflow: hidden; color: var(--muted-foreground); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.pipeline-columns {
+  display: grid;
+  grid-auto-columns: minmax(3.5rem,1fr);
+  grid-auto-flow: column;
+  align-items: end;
+  gap: .7rem;
+  height: 15rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1rem 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  background-image: repeating-linear-gradient(to top, color-mix(in oklab,var(--border) 58%,transparent) 0 1px, transparent 1px 25%);
+}
+.pipeline-column {
+  display: grid;
+  grid-template-rows: 1.25rem minmax(0,1fr) 2.2rem;
+  align-items: end;
+  height: 100%;
+  min-width: 3.5rem;
+  padding: 0 .2rem;
+  border: 0;
+  border-radius: .8rem .8rem 0 0 !important;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+.pipeline-column:hover,.pipeline-column--active { background: color-mix(in oklab,var(--accent) 34%,transparent); color: var(--foreground); }
+.pipeline-column-value { align-self: start; font-size: .72rem; font-weight: 700; }
+.pipeline-column-bar { display: block; width: 100%; min-height: 1rem; border-radius: .8rem .8rem .2rem .2rem; background: linear-gradient(to top,var(--iris-700),var(--iris-300)); box-shadow: 0 10px 22px -14px var(--primary); transition: height var(--t-slow) var(--e-settle),filter var(--t-fast); }
+.pipeline-column-bar--1 { background: linear-gradient(to top,var(--aqua-500),color-mix(in oklab,var(--aqua-500) 44%,white)); }
+.pipeline-column-bar--2 { background: linear-gradient(to top,var(--coral-signal),color-mix(in oklab,var(--coral-signal) 38%,white)); }
+.pipeline-column-bar--3 { background: linear-gradient(to top,var(--mint-500),color-mix(in oklab,var(--mint-500) 40%,white)); }
+.pipeline-column-label { align-self: center; max-width: 5.5rem; overflow: hidden; font-size: .62rem; font-weight: 600; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
 
 .workspace-taskbar {
   position: fixed;
@@ -814,6 +866,56 @@
 
 .auth-prism-one { left: 8%; top: 22%; }
 .auth-prism-two { right: 10%; bottom: 13%; width: 3.5rem; }
+
+.auth-field { position: relative; }
+.auth-field-icon { display: none; }
+
+@media (min-width: 64rem) {
+  .dashboard-control-grid { align-items: stretch; }
+  .dashboard-study-panel { max-height: 27rem; overflow-y: auto; }
+}
+
+@media (max-width: 47.999rem) {
+  body { background: var(--lavender-field); }
+  .app-workspace { background: linear-gradient(165deg,var(--lavender-field),var(--background) 48%,color-mix(in oklab,var(--accent) 45%,var(--background))); }
+  .app-page { padding: 1.25rem 1rem 1.5rem; }
+  .app-page > div { gap: 1rem; }
+  .app-page h1 { font-size: 1.65rem; }
+  .route-stage :where(.surface,.surface-strong,.surface-soft,.glass,.glass--solid) { border-radius: 1.5rem; }
+  .route-stage :where(.surface,.surface-strong,.glass) { background: var(--lavender-surface); }
+  .dashboard-heading { padding: .45rem .35rem .25rem; }
+  .dashboard-heading p { max-width: 21rem; }
+  .dashboard-safety { border-radius: 1.4rem; }
+  .dashboard-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .dashboard-metric { min-height: 7.5rem; padding: 1rem; border-radius: 1.45rem; }
+  .dashboard-metric .glass-data { font-size: 2rem; }
+  .dashboard-metric-icon { width: 2.25rem; height: 2.25rem; border-radius: .8rem; }
+  .dashboard-chart { padding: 1.15rem; }
+  .pipeline-columns { height: 13rem; padding-inline: .25rem; }
+  .dashboard-study-card { min-height: 8rem; }
+
+  .auth-landscape { background: linear-gradient(155deg,var(--lavender-field),var(--background) 52%,color-mix(in oklab,var(--accent) 72%,var(--background))); }
+  .auth-landscape-video { display: none; }
+  .auth-landscape-shade { background: radial-gradient(circle at 54% 8%,color-mix(in oklab,var(--primary) 25%,transparent),transparent 28%),linear-gradient(165deg,var(--lavender-field),var(--background) 54%); }
+  .auth-prism { display: none; }
+  .auth-layout { padding: 1.1rem 0 0; }
+  .auth-topbar { min-height: 3.2rem; padding-inline: 1.25rem; }
+  .auth-topbar .glass-label { padding: .35rem .55rem; font-size: .58rem; }
+  .auth-stage { align-items: end; padding: 1.5rem 0 0; }
+  .auth-prismatic-frame { max-width: none; padding: 0; border-radius: 2.5rem 2.5rem 0 0; background: transparent; }
+  .auth-glass-panel { min-height: calc(100svh - 5.8rem); padding: 2.1rem 1.5rem 1.5rem; border-width: 1px 0 0; border-radius: 2.5rem 2.5rem 0 0; background: var(--lavender-surface); box-shadow: 0 -18px 60px -36px color-mix(in oklab,var(--primary) 48%,transparent),inset 0 1px 0 var(--glass-highlight); backdrop-filter: blur(28px) saturate(140%); }
+  .auth-welcome { margin-bottom: 1.35rem; }
+  .auth-mark { width: 3.25rem; height: 3.25rem; margin-bottom: 1rem; border-radius: 1.05rem; }
+  .auth-eyebrow { display: none; }
+  .auth-welcome h1 { margin-top: 0; font-size: 1.8rem; }
+  .auth-glass-panel > p { font-size: .8rem; }
+  .auth-glass-panel form { margin-top: 1.5rem; }
+  .auth-glass-panel label { margin-left: 2.7rem; font-size: .75rem; }
+  .auth-field-icon { position: absolute; left: 1rem; bottom: .88rem; z-index: 2; display: grid; color: var(--primary); }
+  .auth-field-icon svg { width: 1rem; height: 1rem; }
+  .auth-input { height: 3.1rem; padding-left: 2.7rem; background: color-mix(in oklab,var(--lavender-surface) 88%,white); }
+  .auth-glass-panel form + button { margin-top: .7rem; }
+}
 
 .heart-stage {
   position: relative;

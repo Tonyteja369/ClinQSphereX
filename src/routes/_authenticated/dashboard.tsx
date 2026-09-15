@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SafetyBanner } from "@/components/SafetyBanner";
 import { StatusPill } from "@/components/StatusPill";
 import { ResearchMap } from "@/components/ResearchMap";
+import { useState } from "react";
+import { Activity, ClipboardCheck, FlaskConical, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -24,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
+  const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -57,17 +60,19 @@ function Dashboard() {
   const consentGranted = data.consents.filter((c) => c.status === "granted").length;
 
   const stats = [
-    { label: "Active studies", value: data.studies.filter((s) => s.status === "recruiting").length },
-    { label: "Candidates in pipeline", value: data.candidates.length },
-    { label: "Consents granted", value: consentGranted },
-    { label: "Open tasks", value: data.tasks.length },
+    { label: "Active studies", value: data.studies.filter((s) => s.status === "recruiting").length, icon: FlaskConical },
+    { label: "Candidates in pipeline", value: data.candidates.length, icon: Activity },
+    { label: "Consents granted", value: consentGranted, icon: ShieldCheck },
+    { label: "Open tasks", value: data.tasks.length, icon: ClipboardCheck },
   ];
 
   const candidateTotal = data.candidates.length;
+  const pipelineEntries = Object.entries(byStatus).sort((a, b) => b[1] - a[1]);
+  const selectedStageCount = selectedStage ? byStatus[selectedStage] ?? 0 : candidateTotal;
 
   return (
-    <div className="relative space-y-7 pb-10">
-      <header className="motion-rise pt-1">
+    <div className="dashboard-workspace relative space-y-6 pb-10">
+      <header className="dashboard-heading motion-rise pt-1">
         <h1 className="motion-morph text-[length:var(--fs-h1)] font-semibold leading-[var(--lh-tight)] text-foreground [--morph-name:dashboard-title]">
           Research operations
         </h1>
@@ -76,61 +81,61 @@ function Dashboard() {
         </p>
       </header>
 
-      <div className="motion-rise rounded-[var(--r-md)] bg-background shadow-sm ring-1 ring-primary/25">
+      <div className="dashboard-safety motion-rise rounded-[var(--r-md)] bg-background shadow-sm ring-1 ring-primary/25">
         <SafetyBanner />
       </div>
 
-      <div className="motion-rise-list grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="dashboard-metrics motion-rise-list grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <div
             key={s.label}
-            className="glass glass--react motion-lift motion-rise flex min-h-32 flex-col justify-end overflow-hidden p-5"
+            className="dashboard-metric glass glass--react motion-lift motion-rise grid min-h-28 grid-cols-[1fr_auto] items-end gap-3 overflow-hidden p-5"
           >
-            <p className="glass-data text-[length:var(--fs-display)] font-semibold leading-none text-foreground">
-              {s.value}
-            </p>
-            <div className="mt-4 h-0.5 w-10 rounded-full bg-primary" aria-hidden />
-            <p className="mt-2 text-sm font-medium text-muted-foreground">{s.label}</p>
+            <div>
+              <p className="glass-data text-[length:var(--fs-display)] font-semibold leading-none text-foreground">{s.value}</p>
+              <p className="mt-2 text-sm font-medium text-muted-foreground">{s.label}</p>
+            </div>
+            <span className="dashboard-metric-icon"><s.icon aria-hidden /></span>
           </div>
         ))}
       </div>
 
-      <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <ResearchMap />
-        <div className="glass glass--react motion-rise flex flex-col justify-center p-6 sm:p-8">
-          <p className="text-xs font-semibold text-primary">Research intelligence map</p>
-          <h2 className="mt-3 text-[length:var(--fs-h2)] font-semibold leading-[var(--lh-tight)]">
-            One connected operational record
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Studies connect candidate evidence, model output, consent, tasks and audited researcher
-            action without turning model suggestions into automatic decisions.
-          </p>
-        </div>
-      </section>
-
-      <section className="grid gap-5 lg:grid-cols-2">
-        <div className="glass glass--react motion-rise p-5 sm:p-6">
-          <h2 className="text-[length:var(--fs-h3)] font-semibold">Pipeline by stage</h2>
+      <section className="dashboard-control-grid grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,.75fr)]">
+        <div className="dashboard-chart glass glass--react motion-rise p-5 sm:p-7">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-primary">Live recruitment composition</p>
+              <h2 className="mt-1 text-[length:var(--fs-h2)] font-semibold">Pipeline by stage</h2>
+            </div>
+            <div className="dashboard-chart-total text-right">
+              <strong>{selectedStageCount}</strong>
+              <span>{selectedStage ?? "All candidates"}</span>
+            </div>
+          </div>
           {Object.keys(byStatus).length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">
               No candidates yet — open a study and run screening.
             </p>
           ) : (
             <>
-              <div className="mt-5 flex h-11 overflow-hidden rounded-[var(--r-sm)] bg-muted" aria-label="Candidate pipeline by stage">
-                {Object.entries(byStatus).map(([status, count], index) => (
-                  <div
+              <div className="pipeline-columns" role="img" aria-label="Candidate pipeline by stage">
+                {pipelineEntries.map(([status, count], index) => (
+                  <button
+                    type="button"
                     key={status}
-                    className={`flex min-w-12 origin-left items-center justify-center px-2 text-xs font-semibold text-primary-foreground ${index % 2 === 0 ? "bg-primary" : "bg-[var(--iris-500)]"}`}
-                    style={{ flexGrow: candidateTotal ? count / candidateTotal : 0 }}
+                    className={`pipeline-column ${selectedStage === status ? "pipeline-column--active" : ""}`}
+                    onClick={() => setSelectedStage((current) => current === status ? null : status)}
+                    aria-pressed={selectedStage === status}
+                    aria-label={`${status}: ${count} candidates`}
                   >
-                    <span className="truncate">{count}</span>
-                  </div>
+                    <span className="pipeline-column-value">{count}</span>
+                    <span className={`pipeline-column-bar pipeline-column-bar--${index % 4}`} style={{ height: `${Math.max(16, candidateTotal ? (count / candidateTotal) * 100 : 0)}%` }} />
+                    <span className="pipeline-column-label">{status}</span>
+                  </button>
                 ))}
               </div>
-              <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
-                {Object.entries(byStatus).map(([status, count]) => (
+              <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-3">
+                {pipelineEntries.map(([status, count]) => (
                   <li key={status} className="flex items-center gap-2">
                     <StatusPill value={status} />
                     <span className="glass-data text-sm font-semibold text-foreground">{count}</span>
@@ -141,9 +146,12 @@ function Dashboard() {
           )}
         </div>
 
-        <div className="glass glass--react motion-rise p-5 sm:p-6">
-          <h2 className="text-[length:var(--fs-h3)] font-semibold">Studies</h2>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <div className="dashboard-study-panel glass glass--react motion-rise p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[length:var(--fs-h3)] font-semibold">Studies</h2>
+            <span className="text-xs text-muted-foreground">{data.studies.length} total</span>
+          </div>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             {data.studies.map((s) => {
               const enrolled = data.candidates.filter(
                 (c) => c.study_id === s.id && c.status === "enrolled",
@@ -156,7 +164,7 @@ function Dashboard() {
                   <Link
                     to="/studies/$studyId"
                     params={{ studyId: s.id }}
-                    className="glass--solid motion-lift motion-press grid min-h-36 grid-cols-[3.5rem_1fr] gap-x-3 overflow-hidden p-4"
+                    className="dashboard-study-card glass--solid motion-lift motion-press grid min-h-32 grid-cols-[3.5rem_1fr] gap-x-3 overflow-hidden p-4"
                   >
                     <div className="relative row-span-2 mt-1 size-12 text-primary" aria-hidden>
                       <svg viewBox="0 0 48 48" className="size-12 -rotate-90">
@@ -189,6 +197,17 @@ function Dashboard() {
               );
             })}
           </ul>
+        </div>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <ResearchMap />
+        <div className="glass glass--react motion-rise flex flex-col justify-center p-6 sm:p-8">
+          <p className="text-xs font-semibold text-primary">Research intelligence map</p>
+          <h2 className="mt-3 text-[length:var(--fs-h2)] font-semibold leading-[var(--lh-tight)]">One connected operational record</h2>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            Studies connect candidate evidence, model output, consent, tasks and audited researcher action without turning model suggestions into automatic decisions.
+          </p>
         </div>
       </section>
 
