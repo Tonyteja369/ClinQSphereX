@@ -868,6 +868,8 @@
   .auth-brand > span:last-child,.auth-product-nav,.auth-secure-label { display: none; }
   .auth-editorial-grid { grid-template-columns: 1fr; gap: 1rem; padding-block: 1.3rem 2rem; }
   .auth-hero-copy { padding-top: .5rem; }
+  .auth-product-panel { order: 2; }
+  .auth-science-stage { order: 3; }
   .auth-hero-copy h1 { margin-top: .8rem; font-size: clamp(2.85rem,14vw,4.2rem); }
   .auth-hero-summary { margin-top: 1.2rem; font-size: .86rem; }
   .auth-annotation-row { margin-top: 1rem; font-size: .56rem; }
