@@ -1,5 +1,11 @@
 # ClinQSphereX roadmap
 
+## Current — editorial authentication launch
+- [x] Rebuild authentication as a premium editorial biomedical product composition
+- [x] Integrate the supplied molten-DNA film as a scientific product visual with a still fallback
+- [x] Preserve password, Google, account creation, reset, routing, and researcher-responsibility flows
+- [x] Verify desktop, mobile, reduced-motion, overflow, and interaction states
+
 ## Current — lavender mobile workspace and analytical dashboard
 - [x] Recompose mobile sign-in and sign-up from the supplied clean lavender references
 - [x] Apply the mobile application language across authenticated pages and bottom navigation
