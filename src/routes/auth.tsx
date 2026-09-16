@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { Wordmark } from "@/components/Wordmark";
-import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
-import authVideoAsset from "@/assets/clinqspherex-auth-landscape.mp4.asset.json";
-import authPosterAsset from "@/assets/clinqspherex-auth-landscape-poster.jpg.asset.json";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
+import authVideoAsset from "@/assets/clinqspherex-molten-dna.mp4.asset.json";
+import authPosterAsset from "@/assets/clinqspherex-molten-dna-poster.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -39,6 +38,7 @@ function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
   const [allowVideo, setAllowVideo] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -114,144 +114,125 @@ function AuthPage() {
     navigate({ to: "/dashboard", replace: true });
   }
 
+  async function resetPassword() {
+    if (!email) {
+      toast.error("Enter your institutional email first.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Password reset instructions sent.");
+  }
+
   return (
-    <main className="auth-landscape optical-field relative min-h-screen overflow-hidden text-foreground">
-       {allowVideo ? (
-         <video
-           className="auth-landscape-video"
-           autoPlay
-           muted
-           loop
-           playsInline
-           preload="metadata"
-           poster={authPosterAsset.url}
-           aria-label="Abstract biomedical neural network visualization"
-         >
-           <source src={authVideoAsset.url} type="video/mp4" />
-         </video>
-       ) : (
-         <img
-           src={authPosterAsset.url}
-           alt="Abstract biomedical neural network visualization"
-           className="auth-landscape-video"
-         />
-       )}
-       <div className="auth-landscape-shade" aria-hidden />
-       <div className="auth-prism auth-prism-one" aria-hidden />
-       <div className="auth-prism auth-prism-two" aria-hidden />
-
-        <div className="auth-layout relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-12">
-         <div className="auth-topbar flex items-center justify-between">
-           <Link to="/" className="text-foreground" aria-label="ClinQSphereX home">
+    <main className="auth-editorial min-h-screen overflow-x-hidden text-foreground">
+      <div className="auth-editorial-shell mx-auto flex min-h-screen w-full max-w-[100rem] flex-col px-4 sm:px-7 lg:px-10">
+        <header className="auth-editorial-nav motion-rise">
+          <Link to="/" className="auth-brand" aria-label="ClinQSphereX home">
             <Wordmark />
+            <span>Research · Health · Humanity</span>
           </Link>
-           <div className="glass-label normal-case text-foreground">
-            <LockKeyhole className="size-3.5" aria-hidden />
-            Secure research access
+          <nav aria-label="Product" className="auth-product-nav">
+            {['Research', 'Platform', 'Features', 'Discover', 'About'].map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`}>{item}</a>
+            ))}
+          </nav>
+          <div className="auth-nav-actions">
+            <span className="auth-secure-label"><LockKeyhole aria-hidden /> Secure access</span>
+            <a href="#sign-in" className="auth-signin-link">Sign in</a>
           </div>
-        </div>
+        </header>
 
-          <div className="auth-stage flex flex-1 items-center justify-center py-10">
-            <div className="auth-prismatic-frame motion-rise w-full max-w-[31rem] rounded-[2.6rem] p-[2px]">
-            <GlassPanel variant="elevated" className="auth-glass-panel w-full rounded-[2.5rem] p-7 sm:p-10">
-              <div className="auth-welcome mb-8 flex flex-col items-center text-center">
-               <div className="auth-mark motion-lift mb-5 grid size-16 place-items-center rounded-[1.4rem]">
-                 <ShieldCheck className="size-7 text-primary" aria-hidden />
-               </div>
-                <p className="auth-eyebrow text-xs font-semibold uppercase text-primary">Biomedical research gateway</p>
-               <h1 className="mt-2 text-3xl font-semibold text-foreground">
-                 {mode === "signin" ? "Researcher sign in" : "Create your account"}
-               </h1>
-             </div>
-             <p className="text-center text-sm leading-relaxed text-muted-foreground">
-              {mode === "signin"
-                ? "Sign in to continue to your research workspace."
-                : "Accounts join the demo research organisation with the coordinator role."}
+        <section className="auth-editorial-grid flex-1" aria-labelledby="auth-headline">
+          <div className="auth-hero-copy motion-rise" id="research">
+            <p className="auth-kicker">AI-powered research · Biomedical intelligence</p>
+            <h1 id="auth-headline">
+              <span>From data</span>
+              <span>to human <em>impact.</em></span>
+            </h1>
+            <p className="auth-hero-summary">
+              Intelligence for human health, built around evidence and researcher review.
             </p>
-
-        <form onSubmit={submit} className="mt-7 space-y-4">
-          {mode === "signup" && (
-            <div className="auth-field">
-               <label htmlFor="name" className="ml-3 text-sm font-medium text-foreground">
-                Full name
-              </label>
-              <span className="auth-field-icon" aria-hidden><UserRound /></span>
-              <input
-                id="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                 className="auth-input mt-1.5 w-full rounded-full px-5 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-ring"
-              />
+            <div className="auth-annotation-row" aria-label="Platform capabilities">
+              <span>Signal analysis</span><span>Data to discovery</span><span>Human review</span>
             </div>
-          )}
-          <div className="auth-field">
-             <label htmlFor="email" className="ml-3 text-sm font-medium text-foreground">
-               Research identifier
-            </label>
-            <span className="auth-field-icon" aria-hidden><Mail /></span>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-               placeholder="Enter institutional email"
-               className="auth-input mt-1.5 w-full rounded-full px-5 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-ring"
-            />
           </div>
-          <div className="auth-field">
-             <label htmlFor="password" className="ml-3 text-sm font-medium text-foreground">
-               Security token
-            </label>
-             <span className="auth-field-icon" aria-hidden><LockKeyhole /></span>
-             <input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-               placeholder="Enter password"
-               className="auth-input mt-1.5 w-full rounded-full px-5 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={busy}
-            className="mt-2 h-12 w-full"
-          >
-             <span>{busy ? "Please wait…" : mode === "signin" ? "Initialize session" : "Create account"}</span>
-            {!busy && <ArrowRight className="size-4" aria-hidden />}
-          </Button>
-        </form>
 
-        <Button
-          variant="outline"
-          onClick={google}
-          className="mt-3 h-11 w-full"
-        >
-          Continue with Google
-        </Button>
+          <figure className="auth-science-stage motion-rise" id="discover">
+            <div className="auth-stage-index" aria-hidden>01 / SIGNAL</div>
+            {allowVideo ? (
+              <video autoPlay muted loop playsInline preload="metadata" poster={authPosterAsset.url}>
+                <source src={authVideoAsset.url} type="video/mp4" />
+              </video>
+            ) : (
+              <img src={authPosterAsset.url} alt="Abstract DNA structure with a luminous molecular core" />
+            )}
+            <div className="auth-science-overlay" aria-hidden />
+            <svg className="auth-signal-line" viewBox="0 0 600 80" role="img" aria-label="Abstract biomedical signal waveform">
+              <path d="M0 42h110l18-1 14-25 20 50 22-44 16 20h95l10-8 14 8h70l18-20 16 40 22-38 15 18h120" />
+            </svg>
+            <figcaption>
+              <span>Biomedical signal architecture</span>
+              <strong>Evidence remains subject to researcher review.</strong>
+            </figcaption>
+          </figure>
 
-        <Button
-          variant="ghost"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-5 w-full text-muted-foreground"
-        >
-          {mode === "signin"
-            ? "No account yet? Create one"
-            : "Already have an account? Sign in"}
-        </Button>
-             <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-               <span className="size-1.5 rounded-full bg-success" aria-hidden />
-               Secure research workspace
-             </div>
-             <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
-              Screening support only. Researchers remain responsible for all decisions.
-            </p>
-          </GlassPanel>
-           </div>
-        </div>
+          <section className="auth-product-panel motion-rise" id="sign-in" aria-labelledby="signin-heading">
+            <div className="auth-panel-head">
+              <span>Secure research access</span>
+              <span aria-hidden>02</span>
+            </div>
+            <h2 id="signin-heading">{mode === "signin" ? "Researcher sign in" : "Create your account"}</h2>
+            <p>{mode === "signin" ? "Sign in to continue to your research workspace." : "Create a research workspace account."}</p>
+
+            <form onSubmit={submit} className="auth-editorial-form">
+              {mode === "signup" && (
+                <div className="auth-field">
+                  <label htmlFor="name">Full name</label>
+                  <span className="auth-field-icon" aria-hidden><UserRound /></span>
+                  <input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="auth-input" placeholder="Enter full name" />
+                </div>
+              )}
+              <div className="auth-field">
+                <label htmlFor="email">Researcher identifier</label>
+                <span className="auth-field-icon" aria-hidden><Mail /></span>
+                <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter institutional email" className="auth-input" />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="password">Security token</label>
+                <span className="auth-field-icon" aria-hidden><LockKeyhole /></span>
+                <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="auth-input auth-input-password" />
+                <Button type="button" variant="ghost" size="icon" className="auth-password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                  {showPassword ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
+                </Button>
+              </div>
+              {mode === "signin" && (
+                <Button type="button" variant="link" onClick={resetPassword} className="auth-forgot">Forgot password?</Button>
+              )}
+              <Button type="submit" disabled={busy} className="auth-primary-action">
+                <span>{busy ? "Please wait…" : mode === "signin" ? "Initialize session" : "Create account"}</span>
+                {!busy && <ArrowRight aria-hidden />}
+              </Button>
+            </form>
+
+            <Button variant="outline" onClick={google} className="auth-google-action">Continue with Google</Button>
+            <Button variant="ghost" onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="auth-mode-action">
+              {mode === "signin" ? "Create account" : "Already have an account? Sign in"}
+            </Button>
+            <div className="auth-trust-line"><span aria-hidden /> Secure research workspace</div>
+            <p className="auth-responsibility">Screening support only. Researchers remain responsible for all decisions.</p>
+          </section>
+        </section>
+
+        <footer className="auth-editorial-footer" id="about">
+          <span>ClinQSphereX / Research workspace</span>
+          <span>Biomedical intelligence · Human review</span>
+        </footer>
       </div>
     </main>
   );
