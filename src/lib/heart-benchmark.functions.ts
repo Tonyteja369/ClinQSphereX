@@ -931,9 +931,32 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
       accuracy_difference: accuracyDifference,
       accuracy_difference_pp: accuracyDifference * 100,
       quantum_exceeds_classical: best.accuracy > classicalMetrics.accuracy,
+      classical_matched: {
+        model: `Logistic regression (identical settings) restricted to the ${matchedNames.length} feature${matchedNames.length === 1 ? "" : "s"} the selected quantum configuration encodes`,
+        features: matchedNames,
+        feature_count: matchedNames.length,
+        ...matchedMetrics,
+        training_time_ms: mTrainMs,
+        inference_time_ms: mInferMs,
+        total_time_ms: mTrainMs + mInferMs,
+      },
+      significance: {
+        method:
+          "McNemar exact test (two-sided, binomial on discordant pairs) on the held-out test split.",
+        test_samples: yte.length,
+        full_vs_quantum: mcFull,
+        matched_vs_quantum: mcMatched,
+        interpretation: `Headline classical vs quantum differ on ${mcFull.discordant_pairs} of ${yte.length} test records (${mcFull.only_first_correct} only-classical-correct, ${mcFull.only_second_correct} only-quantum-correct), exact p = ${mcFull.p_value}. ${
+          mcFull.significant_at_05
+            ? "This difference is statistically significant at α = 0.05."
+            : "This difference is NOT statistically significant at α = 0.05 — on this test set the two models are statistically indistinguishable, and any accuracy gap shown should be read as noise, not evidence of quantum benefit."
+        }`,
+      },
+      timer,
       fair_comparison: {
         same_dataset: true,
-        same_features: true,
+        same_features: matchedNames.length === d,
+        feature_parity_note: `NOT matched in the headline row: the classical logistic regression uses all ${d} standardised features, while the selected quantum configuration encodes ${matchedNames.length} (${matchedNames.join(", ")}). The feature-matched classical arm reported alongside it trains the same logistic regression on exactly those ${matchedNames.length} features and is the only like-for-like comparison.`,
         same_split: true,
         same_seed: true,
         same_test_set: true,
