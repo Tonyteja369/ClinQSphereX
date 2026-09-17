@@ -521,8 +521,96 @@ function probeTimerResolution() {
   };
 }
 
+/**
+ * Wilson score interval (95%, two-sided) on a proportion. Wald is deliberately
+ * avoided: its coverage is poor at the sample sizes used here.
+ */
+function wilson(p: number, n: number, z = 1.959963985): WilsonInterval {
+  if (n <= 0) {
+    return { estimate: p, lower: 0, upper: 1, successes: 0, n: 0, level: "95%" };
+  }
+  const denom = 1 + (z * z) / n;
+  const centre = (p + (z * z) / (2 * n)) / denom;
+  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+  const r = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 1e6) / 1e6;
+  return {
+    estimate: r(p),
+    lower: r(centre - half),
+    upper: r(centre + half),
+    successes: Math.round(p * n),
+    n,
+    level: "95%",
+  };
+}
+
+/**
+ * Smallest eigenvalue of a symmetric matrix, estimated by power iteration on
+ * (cI − K) where c bounds the spectrum (Gershgorin). Used to detect the small
+ * negative eigenvalues that floating-point error introduces into a Gram matrix.
+ */
+function minEigenvalueEstimate(K: number[][], iters = 40) {
+  const n = K.length;
+  if (n === 0) return 0;
+  let c = 0;
+  for (let i = 0; i < n; i += 1) {
+    let s = 0;
+    const Ki = K[i]!;
+    for (let j = 0; j < n; j += 1) s += Math.abs(Ki[j]!);
+    if (s > c) c = s;
+  }
+  const rand = mulberry32(11);
+  let v = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) v[i] = rand() - 0.5;
+  let lamMax = 0;
+  for (let t = 0; t < iters; t += 1) {
+    const w = new Float64Array(n);
+    for (let i = 0; i < n; i += 1) {
+      let s = c * v[i]!;
+      const Ki = K[i]!;
+      for (let j = 0; j < n; j += 1) s -= Ki[j]! * v[j]!;
+      w[i] = s;
+    }
+    let norm = 0;
+    for (let i = 0; i < n; i += 1) norm += w[i]! * w[i]!;
+    norm = Math.sqrt(norm);
+    if (!(norm > 0)) break;
+    for (let i = 0; i < n; i += 1) v[i] = w[i]! / norm;
+    lamMax = norm;
+  }
+  return c - lamMax;
+}
+
+/**
+ * A fidelity Gram matrix is PSD in exact arithmetic, but accumulated rounding
+ * can push the smallest eigenvalue slightly negative, which an SVM solver on a
+ * precomputed kernel is not entitled to assume. Add the smallest ridge that
+ * restores PSD, and report whether it was needed.
+ */
+function repairPsd(K: number[][]): PsdReport {
+  const minEig = minEigenvalueEstimate(K);
+  if (minEig >= -1e-10) {
+    return {
+      checked: true,
+      min_eigenvalue: minEig,
+      repaired: false,
+      ridge: 0,
+      note: `Smallest estimated eigenvalue ${minEig.toExponential(3)} — the Gram matrix is positive semi-definite as computed, so no repair was applied.`,
+    };
+  }
+  const ridge = -minEig + 1e-8;
+  for (let i = 0; i < K.length; i += 1) K[i]![i] = K[i]![i]! + ridge;
+  return {
+    checked: true,
+    min_eigenvalue: minEig,
+    repaired: true,
+    ridge,
+    note: `Smallest estimated eigenvalue ${minEig.toExponential(3)} was negative from floating-point error. A ridge of ${ridge.toExponential(3)} was added to the diagonal before the SVM solver, restoring positive semi-definiteness.`,
+  };
+}
+
 /** Two-sided exact McNemar test on the discordant pairs of two classifiers. */
 function mcnemarExact(aCorrect: boolean[], bCorrect: boolean[]) {
+
   let b = 0; // first correct, second wrong
   let c = 0; // second correct, first wrong
   for (let i = 0; i < aCorrect.length; i += 1) {
