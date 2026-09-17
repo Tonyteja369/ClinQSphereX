@@ -268,22 +268,34 @@ export function HeartBenchmark() {
         </p>
 
         <div className="mt-4 rounded-md border border-border bg-secondary p-3 text-sm">
-          <strong>Fair experimental comparison.</strong>
+          <strong>Comparison conditions — including what is not matched.</strong>
           <span className="mt-2 flex flex-wrap gap-2">
             {[
-              "Same dataset",
-              "Same features",
-              "Same split",
-              "Same seed",
-              "Same test set",
-              "Same evaluation protocol",
-              "No test-label tuning",
-            ].map((t) => (
-              <span key={t} className="rounded-full border border-border px-2.5 py-0.5 text-xs">
-                {t}
+              ["Same dataset", true],
+              [
+                result
+                  ? `Features NOT matched (classical ${result.dataset.features} vs quantum ${result.best_quantum.feature_dimensions})`
+                  : "Features NOT matched in the headline arms",
+                false,
+              ],
+              ["Same split", true],
+              ["Same seed", true],
+              ["Same test set", true],
+              ["Same evaluation protocol", true],
+              ["No test-label tuning", true],
+            ].map(([t, ok]) => (
+              <span
+                key={String(t)}
+                className={`rounded-full border px-2.5 py-0.5 text-xs ${ok ? "border-border" : "border-destructive text-destructive"}`}
+              >
+                {ok ? "✓" : "✕"} {String(t)}
               </span>
             ))}
           </span>
+          <p className="mt-2 text-xs text-muted-foreground">
+            A feature-matched classical arm is trained on exactly the features the quantum
+            configuration encodes and reported alongside the headline row.
+          </p>
         </div>
 
         <ol className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
