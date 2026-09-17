@@ -69,8 +69,20 @@ export function HeartBenchmark() {
   });
 
   useEffect(() => {
-    // Older stored runs predate the configuration sweep; ignore them.
-    if (!result && stored.data?.kernel_previews?.length && status === "ready") setResult(stored.data);
+    // Older stored runs predate the configuration sweep and the reviewer
+    // disclosures (significance, timer probe, feature-matched arm); ignore them
+    // so the page never renders a result without those checks.
+    const s = stored.data;
+    if (
+      !result &&
+      status === "ready" &&
+      s?.kernel_previews?.length &&
+      s.significance &&
+      s.timer &&
+      s.classical_matched
+    ) {
+      setResult(s);
+    }
   }, [stored.data, result, status]);
 
   useEffect(() => {
