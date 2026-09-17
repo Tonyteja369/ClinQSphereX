@@ -837,12 +837,17 @@ export function HeartBenchmark() {
               On {result.dataset.test_samples} held-out records from the UCI Heart Disease dataset,
               the selected quantum-kernel configuration reached a ROC-AUC of{" "}
               {n3(result.quantum.roc_auc)} compared with {n3(result.classical.roc_auc)} for the
-              classical logistic-regression baseline (accuracy {n3(result.quantum.accuracy)} vs{" "}
-              {n3(result.classical.accuracy)}). The quantum pipeline required{" "}
-              {result.comparison.total_time_ratio.toFixed(2)}× the total runtime of the classical
-              pipeline in this run, of which {ms(result.quantum.kernel_time_ms)} was kernel
-              construction.
+              classical logistic-regression baseline (accuracy {n3(result.quantum.accuracy)}, 95% CI{" "}
+              {ci(result.intervals.quantum)} vs {n3(result.classical.accuracy)}, 95% CI{" "}
+              {ci(result.intervals.classical)} — the intervals overlap). The quantum pipeline
+              required{" "}
+              {result.comparison.total_time_ratio === null
+                ? "an unmeasurable multiple of"
+                : `${result.comparison.total_time_ratio.toFixed(2)}× `}{" "}
+              the total runtime of the classical pipeline in this run, of which{" "}
+              {ms(result.quantum.kernel_time_ms)} was kernel construction.
             </p>
+
             <p className="mt-3 text-sm">
               Experimental quantum-kernel benchmark. Results are environment-dependent and
               dataset-specific and do not establish general quantum advantage. The quantum pipeline
