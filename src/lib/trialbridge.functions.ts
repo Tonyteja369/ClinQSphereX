@@ -283,7 +283,7 @@ export const runAllocation = createServerFn({ method: "POST" })
       .insert({
         org_id,
         study_id: data.studyId,
-        method: "qubo_site_allocation",
+        method: "site_allocation_qubo",
         backend: result.method === "exhaustive" ? "classical_exhaustive" : "classical_annealing",
         objective: result.objective,
         qubo_size: result.numVariables,
