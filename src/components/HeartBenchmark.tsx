@@ -147,10 +147,11 @@ export function HeartBenchmark() {
             { stage: "Quantum training", ms: result.quantum.training_time_ms },
             { stage: "Classical inference", ms: result.classical.inference_time_ms },
             { stage: "Quantum inference", ms: result.quantum.inference_time_ms },
-          ].map((r) => ({ ...r, ms: Number(r.ms.toFixed(3)) }))
+          ].map((r) => ({ stage: r.stage, µs: Number((r.ms * 1000).toFixed(3)) }))
         : [],
     [result],
   );
+
 
   const rocData = useMemo(() => {
     if (!result) return [];
