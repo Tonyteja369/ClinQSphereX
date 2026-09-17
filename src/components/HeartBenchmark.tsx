@@ -880,14 +880,17 @@ function Item({ k, v }: { k: string; v: string }) {
   );
 }
 
-function Ratio({ label, value }: { label: string; value: number }) {
+function Ratio({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium tabular-nums">{value.toFixed(2)}×</dd>
+      <dd className="font-medium tabular-nums" title={value === null ? "Denominator measured below timer resolution — no ratio can be derived." : undefined}>
+        {value === null ? "—" : `${value.toFixed(2)}×`}
+      </dd>
     </div>
   );
 }
+
 
 function Summary({ title, name, value }: { title: string; name: string; value: string }) {
   return (
