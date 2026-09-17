@@ -497,6 +497,13 @@ function trainKernelSvm(K: number[][], y: number[], C = 1, tol = 1e-3, maxPasses
 }
 
 const round4 = (v: number) => Math.round(v * 1e4) / 1e4;
+/**
+ * Per-record scores are stored at higher precision than they are displayed:
+ * quantum decision values are small, and 4-decimal rounding created artificial
+ * ties that made an AUC recomputed from the trace disagree with the AUC the run
+ * measured from the raw scores.
+ */
+const round9 = (v: number) => Math.round(v * 1e9) / 1e9;
 
 /**
  * Probe how finely the host clock actually advances. Serverless/edge runtimes
@@ -915,9 +922,9 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
         id: `TEST-${String(i + 1).padStart(3, "0")}`,
         true_label: y,
         classical_prediction: cp,
-        classical_score: round4(cs),
+        classical_score: round9(cs),
         quantum_prediction: qp,
-        quantum_score: round4(qs),
+        quantum_score: round9(qs),
         classical_correct: cp === y,
         quantum_correct: qp === y,
       };
