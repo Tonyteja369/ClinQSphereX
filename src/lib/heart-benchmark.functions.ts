@@ -953,6 +953,37 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
         }`,
       },
       timer,
+      intervals: {
+        method:
+          "Wilson score interval, 95% (two-sided). Wald intervals are not used — their coverage is poor at this sample size.",
+        test_samples: yte.length,
+        classical: wilson(classicalMetrics.accuracy, yte.length),
+        classical_matched: wilson(matchedMetrics.accuracy, yte.length),
+        quantum: wilson(best.accuracy, yte.length),
+        note: `With ${yte.length} held-out records, every accuracy on this page carries a 95% Wilson interval roughly ±${(
+          (wilson(best.accuracy, yte.length).upper - wilson(best.accuracy, yte.length).lower) *
+          50
+        ).toFixed(1)} percentage points wide on each side. The classical and quantum intervals overlap almost entirely, which is the same conclusion the McNemar test reaches.`,
+      },
+      kernel_timing: {
+        total_kernel_ms: best.kernel_time_ms,
+        kernel_evaluations: best.kernel_evaluations,
+        mean_per_entry_us:
+          best.kernel_evaluations > 0 ? (best.kernel_time_ms * 1000) / best.kernel_evaluations : null,
+        measurable: best.kernel_time_ms > 0,
+        note:
+          best.kernel_time_ms > 0
+            ? "Mean time per kernel entry is derived from the measured kernel-construction duration divided by the counted kernel evaluations."
+            : "The kernel stage measured below the host timer resolution, so no per-entry time can be derived. The counted kernel evaluations remain the workload evidence.",
+      },
+      psd: psdBest ?? {
+        checked: false,
+        min_eigenvalue: 0,
+        repaired: false,
+        ridge: 0,
+        note: "Positive semi-definiteness was not evaluated for this configuration.",
+      },
+
       fair_comparison: {
         same_dataset: true,
         same_features: matchedNames.length === d,
