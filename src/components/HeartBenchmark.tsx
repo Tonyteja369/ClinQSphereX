@@ -600,8 +600,9 @@ export function HeartBenchmark() {
                 ? `Under the evaluated experimental configuration, the best quantum-kernel model achieved higher test accuracy than the classical logistic-regression baseline (${pct(result.best_quantum.accuracy)} vs ${pct(result.classical.accuracy)}, +${Math.abs(result.accuracy_difference_pp).toFixed(1)} percentage points). Performance is configuration- and dataset-dependent; this is not a general quantum-advantage result.`
                 : `Under the evaluated configurations, the classical baseline achieved higher or equal test accuracy (${pct(result.classical.accuracy)} vs ${pct(result.best_quantum.accuracy)}). Best measured quantum configuration did not exceed the classical baseline. The quantum result remains an experimental benchmark.`}{" "}
               {result.significance
-                ? `McNemar exact p = ${result.significance.p_value.toFixed(4)} on ${result.significance.discordant_pairs} discordant record${result.significance.discordant_pairs === 1 ? "" : "s"}: the difference between the two arms is not statistically distinguishable from noise, whichever arm is numerically ahead.`
+                ? `McNemar exact p = ${result.significance.full_vs_quantum.p_value.toFixed(4)} on ${result.significance.full_vs_quantum.discordant_pairs} discordant record${result.significance.full_vs_quantum.discordant_pairs === 1 ? "" : "s"}: the difference between the two arms is not statistically distinguishable from noise, whichever arm is numerically ahead.`
                 : null}
+
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               Selection rule: {result.evaluation_protocol.selection_rule} Full sweep runtime{" "}
