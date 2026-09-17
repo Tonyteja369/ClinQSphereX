@@ -742,6 +742,7 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
               kernel_train_dim: `${n} × ${n}`,
               kernel_test_dim: `${Kte.length} × ${n}`,
               kernel_evaluations: kernelEvaluations,
+              kernel_evaluation_formula: kernelEvaluationFormula,
               support_vectors: svm.alpha.filter((a) => a > 1e-8).length,
               validation_accuracy: validationAccuracy,
               kernel_time_ms: kernelMs,
