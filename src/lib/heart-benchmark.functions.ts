@@ -773,6 +773,10 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
           const kernelEvaluationFormula = `${n}×${n - 1}/2 + ${Kte.length}×${n} = ${((n * (n - 1)) / 2).toLocaleString()} + ${(Kte.length * n).toLocaleString()} = ${kernelEvaluations.toLocaleString()}`;
 
           const kernelId = `${qubits}q-${reps}r-${mapType}`;
+          // PSD check + repair before the matrix reaches the SVM solver.
+          const psdReport = repairPsd(Ktr);
+          psdByKernel.set(kernelId, psdReport);
+
           const previewN = Math.min(16, n);
           const previewT = Math.min(10, Kte.length);
           let kmin = 1;
