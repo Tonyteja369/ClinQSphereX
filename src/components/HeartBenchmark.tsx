@@ -298,7 +298,7 @@ export function HeartBenchmark() {
       const name = a.side === "classical" ? "Classical" : "Quantum";
       if (a.delta !== null && Math.abs(a.delta) > 0.005) {
         flags.push(
-          `${name}: the reported ROC-AUC (${n3(a.reported)}) disagrees with the recomputation from the same predictions (${n3(a.auc!)}). The reported figure is the one to correct.`,
+          `${name}: the reported ROC-AUC (${n3(a.reported)}) disagrees with the recomputation from the stored per-record scores (${n3(a.auc!)}). Most often this is score rounding in the stored trace creating ties, not an error in the run — but until the two agree, neither figure should be quoted.`,
         );
       }
       if (a.auc !== null && a.auc < 0.5) {
