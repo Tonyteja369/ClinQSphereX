@@ -813,7 +813,7 @@ export function HeartBenchmark() {
             </GlassPanel>
 
             <GlassPanel className="p-5">
-              <h4 className="text-sm font-semibold">Computational cost (milliseconds)</h4>
+              <h4 className="text-sm font-semibold">Computational cost (microseconds)</h4>
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={runtimeData} layout="vertical" margin={{ left: 40 }}>
@@ -821,7 +821,7 @@ export function HeartBenchmark() {
                     <XAxis type="number" fontSize={12} />
                     <YAxis type="category" dataKey="stage" width={130} fontSize={11} />
                     <Tooltip />
-                    <Bar dataKey="ms" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="µs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
