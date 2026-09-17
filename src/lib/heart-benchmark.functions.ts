@@ -264,9 +264,10 @@ export type BenchmarkResult = {
     recall_delta: number;
     f1_delta: number;
     roc_auc_delta: number;
-    training_time_ratio: number;
-    inference_time_ratio: number;
-    total_time_ratio: number;
+    training_time_ratio: number | null;
+    inference_time_ratio: number | null;
+    total_time_ratio: number | null;
+
   };
   reproducible: boolean;
   reproduction: {
