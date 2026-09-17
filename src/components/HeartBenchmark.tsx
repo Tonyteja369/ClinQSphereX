@@ -453,6 +453,68 @@ export function HeartBenchmark() {
                 from the split sizes, so it can be verified live.
               </p>
             </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>4 · Confidence intervals on every accuracy.</strong>
+              <p className="mt-1">{result.intervals.note}</p>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-3">
+                <Item
+                  k="Classical (all features)"
+                  v={`${pct(result.classical.accuracy)} · 95% CI ${ci(result.intervals.classical)}`}
+                />
+                <Item
+                  k="Classical (feature-matched)"
+                  v={`${pct(result.classical_matched.accuracy)} · 95% CI ${ci(result.intervals.classical_matched)}`}
+                />
+                <Item
+                  k="Quantum kernel"
+                  v={`${pct(result.best_quantum.accuracy)} · 95% CI ${ci(result.intervals.quantum)}`}
+                />
+              </dl>
+              <p className="mt-2 text-xs text-muted-foreground">{result.intervals.method}</p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>5 · Cost per kernel entry.</strong>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-3">
+                <Item
+                  k="Kernel construction"
+                  v={ms(result.kernel_timing.total_kernel_ms)}
+                />
+                <Item
+                  k="Kernel evaluations"
+                  v={result.kernel_timing.kernel_evaluations.toLocaleString()}
+                />
+                <Item
+                  k="Mean per entry"
+                  v={
+                    result.kernel_timing.mean_per_entry_us === null
+                      ? "—"
+                      : `${result.kernel_timing.mean_per_entry_us.toFixed(3)} µs`
+                  }
+                />
+              </dl>
+              <p className="mt-2 text-xs text-muted-foreground">{result.kernel_timing.note}</p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>
+                6 · Kernel matrix {result.psd.repaired ? "required PSD repair." : "is positive semi-definite."}
+              </strong>
+              <p className="mt-1">{result.psd.note}</p>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-3">
+                <Item
+                  k="Smallest eigenvalue"
+                  v={result.psd.checked ? result.psd.min_eigenvalue.toExponential(3) : "not evaluated"}
+                />
+                <Item k="Repair applied" v={result.psd.repaired ? "Yes" : "No"} />
+                <Item
+                  k="Diagonal ridge"
+                  v={result.psd.ridge > 0 ? result.psd.ridge.toExponential(3) : "0"}
+                />
+              </dl>
+            </div>
+
           </div>
         </GlassPanel>
       ) : null}
