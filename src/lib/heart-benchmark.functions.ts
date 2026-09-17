@@ -647,6 +647,8 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
           const Kte = teStates.map((t) => trStates.map((s) => fidelity(t, s, dim)));
           const kernelMs = performance.now() - kernelStart;
           const kernelEvaluations = (n * (n - 1)) / 2 + Kte.length * n;
+          // Shown in the UI so the count can be checked arithmetically on screen.
+          const kernelEvaluationFormula = `${n}×${n - 1}/2 + ${Kte.length}×${n} = ${((n * (n - 1)) / 2).toLocaleString()} + ${(Kte.length * n).toLocaleString()} = ${kernelEvaluations.toLocaleString()}`;
 
           const kernelId = `${qubits}q-${reps}r-${mapType}`;
           const previewN = Math.min(16, n);
