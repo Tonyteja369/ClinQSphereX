@@ -86,6 +86,7 @@ export type QuantumExperiment = MetricSet & {
   kernel_train_dim: string;
   kernel_test_dim: string;
   kernel_evaluations: number;
+  kernel_evaluation_formula: string;
   support_vectors: number;
   validation_accuracy: number;
   kernel_time_ms: number;
@@ -192,9 +193,31 @@ export type BenchmarkResult = {
   accuracy_difference: number;
   accuracy_difference_pp: number;
   quantum_exceeds_classical: boolean;
+  classical_matched: MetricSet & {
+    model: string;
+    features: string[];
+    feature_count: number;
+    training_time_ms: number;
+    inference_time_ms: number;
+    total_time_ms: number;
+  };
+  significance: {
+    method: string;
+    test_samples: number;
+    full_vs_quantum: ReturnType<typeof mcnemarExact>;
+    matched_vs_quantum: ReturnType<typeof mcnemarExact>;
+    interpretation: string;
+  };
+  timer: {
+    advanced: boolean;
+    resolution_ms: number;
+    spins: number;
+    note: string;
+  };
   fair_comparison: {
     same_dataset: boolean;
     same_features: boolean;
+    feature_parity_note: string;
     same_split: boolean;
     same_seed: boolean;
     same_test_set: boolean;
@@ -440,6 +463,60 @@ function trainKernelSvm(K: number[][], y: number[], C = 1, tol = 1e-3, maxPasses
 
 const round4 = (v: number) => Math.round(v * 1e4) / 1e4;
 
+/**
+ * Probe how finely the host clock actually advances. Serverless/edge runtimes
+ * deliberately freeze timers between I/O operations, so CPU-bound sections can
+ * legitimately measure as exactly 0 ms. We report the probe instead of hiding it.
+ */
+function probeTimerResolution() {
+  const t0 = performance.now();
+  let spins = 0;
+  let t1 = t0;
+  while (t1 === t0 && spins < 5_000_000) {
+    spins += 1;
+    t1 = performance.now();
+  }
+  const advanced = t1 !== t0;
+  return {
+    advanced,
+    resolution_ms: advanced ? t1 - t0 : 0,
+    spins,
+    note: advanced
+      ? `Host clock advanced after ${spins.toLocaleString()} reads; smallest observed step ${(t1 - t0).toFixed(3)} ms. Durations below this step are reported as "below timer resolution", not as real zeros.`
+      : `Host clock did not advance across ${spins.toLocaleString()} consecutive reads. This runtime freezes timers between I/O operations, so CPU-bound stages measure exactly 0 ms regardless of the work done. Treat all sub-step durations as unmeasurable here and use the reported operation counts (kernel evaluations, SMO passes) as the workload evidence.`,
+  };
+}
+
+/** Two-sided exact McNemar test on the discordant pairs of two classifiers. */
+function mcnemarExact(aCorrect: boolean[], bCorrect: boolean[]) {
+  let b = 0; // first correct, second wrong
+  let c = 0; // second correct, first wrong
+  for (let i = 0; i < aCorrect.length; i += 1) {
+    if (aCorrect[i] && !bCorrect[i]) b += 1;
+    else if (!aCorrect[i] && bCorrect[i]) c += 1;
+  }
+  const n = b + c;
+  let p = 1;
+  if (n > 0) {
+    const k = Math.min(b, c);
+    // binomial tail with p = 0.5, computed with a running coefficient
+    let coeff = 1;
+    let tail = 1; // C(n,0)
+    for (let i = 1; i <= k; i += 1) {
+      coeff = (coeff * (n - i + 1)) / i;
+      tail += coeff;
+    }
+    p = Math.min(1, 2 * tail * Math.pow(0.5, n));
+  }
+  return {
+    discordant_pairs: n,
+    only_first_correct: b,
+    only_second_correct: c,
+    p_value: Math.round(p * 1e6) / 1e6,
+    significant_at_05: p < 0.05,
+  };
+}
+
 /* --------------------------------------------------------------- runner */
 
 export const runHeartBenchmark = createServerFn({ method: "POST" })
@@ -570,6 +647,8 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
           const Kte = teStates.map((t) => trStates.map((s) => fidelity(t, s, dim)));
           const kernelMs = performance.now() - kernelStart;
           const kernelEvaluations = (n * (n - 1)) / 2 + Kte.length * n;
+          // Shown in the UI so the count can be checked arithmetically on screen.
+          const kernelEvaluationFormula = `${n}×${n - 1}/2 + ${Kte.length}×${n} = ${((n * (n - 1)) / 2).toLocaleString()} + ${(Kte.length * n).toLocaleString()} = ${kernelEvaluations.toLocaleString()}`;
 
           const kernelId = `${qubits}q-${reps}r-${mapType}`;
           const previewN = Math.min(16, n);
@@ -663,6 +742,7 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
               kernel_train_dim: `${n} × ${n}`,
               kernel_test_dim: `${Kte.length} × ${n}`,
               kernel_evaluations: kernelEvaluations,
+              kernel_evaluation_formula: kernelEvaluationFormula,
               support_vectors: svm.alpha.filter((a) => a > 1e-8).length,
               validation_accuracy: validationAccuracy,
               kernel_time_ms: kernelMs,
@@ -713,6 +793,40 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
         quantum_correct: qp === y,
       };
     });
+
+    // --- feature-matched classical arm ---------------------------------------
+    // The headline classical baseline sees ALL 13 standardised features, while
+    // the quantum arm encodes only the selected few. That is NOT feature parity,
+    // so we also train the identical logistic regression on exactly the features
+    // the selected quantum configuration encodes, and report both.
+    const matchedIdx = Array.from(new Set(best.features.map((f) => FEATURE_NAMES.indexOf(f)))).filter(
+      (j) => j >= 0,
+    );
+    const matchedNames = matchedIdx.map((j) => FEATURE_NAMES[j]!);
+    const mTrainStart = performance.now();
+    const mModel = trainLogisticRegression(
+      Xtr.map((r) => matchedIdx.map((j) => r[j]!)),
+      ytr,
+    );
+    const mTrainMs = performance.now() - mTrainStart;
+    const mInferStart = performance.now();
+    const mScores = Xte.map((r) => {
+      let z = mModel.b;
+      matchedIdx.forEach((j, k) => {
+        z += mModel.w[k]! * r[j]!;
+      });
+      return 1 / (1 + Math.exp(-z));
+    });
+    const mInferMs = performance.now() - mInferStart;
+    const matchedMetrics = evaluate(mScores, yte, 0.5);
+
+    // --- statistical significance of the classical/quantum gap ---------------
+    const quantumCorrect = predictionTrace.map((t) => t.quantum_correct);
+    const classicalCorrect = predictionTrace.map((t) => t.classical_correct);
+    const matchedCorrect = mScores.map((s, i) => (s >= 0.5 ? 1 : 0) === yte[i]);
+    const mcFull = mcnemarExact(classicalCorrect, quantumCorrect);
+    const mcMatched = mcnemarExact(matchedCorrect, quantumCorrect);
+    const timer = probeTimerResolution();
 
     const cTotal = cTrainMs + cInferMs;
     const qTotal = best.total_time_ms;
@@ -817,9 +931,32 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
       accuracy_difference: accuracyDifference,
       accuracy_difference_pp: accuracyDifference * 100,
       quantum_exceeds_classical: best.accuracy > classicalMetrics.accuracy,
+      classical_matched: {
+        model: `Logistic regression (identical settings) restricted to the ${matchedNames.length} feature${matchedNames.length === 1 ? "" : "s"} the selected quantum configuration encodes`,
+        features: matchedNames,
+        feature_count: matchedNames.length,
+        ...matchedMetrics,
+        training_time_ms: mTrainMs,
+        inference_time_ms: mInferMs,
+        total_time_ms: mTrainMs + mInferMs,
+      },
+      significance: {
+        method:
+          "McNemar exact test (two-sided, binomial on discordant pairs) on the held-out test split.",
+        test_samples: yte.length,
+        full_vs_quantum: mcFull,
+        matched_vs_quantum: mcMatched,
+        interpretation: `Headline classical vs quantum differ on ${mcFull.discordant_pairs} of ${yte.length} test records (${mcFull.only_first_correct} only-classical-correct, ${mcFull.only_second_correct} only-quantum-correct), exact p = ${mcFull.p_value}. ${
+          mcFull.significant_at_05
+            ? "This difference is statistically significant at α = 0.05."
+            : "This difference is NOT statistically significant at α = 0.05 — on this test set the two models are statistically indistinguishable, and any accuracy gap shown should be read as noise, not evidence of quantum benefit."
+        }`,
+      },
+      timer,
       fair_comparison: {
         same_dataset: true,
-        same_features: true,
+        same_features: matchedNames.length === d,
+        feature_parity_note: `NOT matched in the headline row: the classical logistic regression uses all ${d} standardised features, while the selected quantum configuration encodes ${matchedNames.length} (${matchedNames.join(", ")}). The feature-matched classical arm reported alongside it trains the same logistic regression on exactly those ${matchedNames.length} features and is the only like-for-like comparison.`,
         same_split: true,
         same_seed: true,
         same_test_set: true,

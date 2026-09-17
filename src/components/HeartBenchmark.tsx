@@ -38,7 +38,7 @@ const ms = (v: number) =>
       ? `${v.toFixed(2)} ms`
       : v > 0
         ? `${(v * 1000).toFixed(1)} µs`
-        : "0 ms";
+        : "below timer resolution";
 const signed = (v: number, f: (n: number) => string) => `${v > 0 ? "+" : ""}${f(v)}`;
 const signedMs = (v: number) => `${v > 0 ? "+" : "−"}${ms(Math.abs(v))}`;
 
@@ -69,8 +69,20 @@ export function HeartBenchmark() {
   });
 
   useEffect(() => {
-    // Older stored runs predate the configuration sweep; ignore them.
-    if (!result && stored.data?.kernel_previews?.length && status === "ready") setResult(stored.data);
+    // Older stored runs predate the configuration sweep and the reviewer
+    // disclosures (significance, timer probe, feature-matched arm); ignore them
+    // so the page never renders a result without those checks.
+    const s = stored.data;
+    if (
+      !result &&
+      status === "ready" &&
+      s?.kernel_previews?.length &&
+      s.significance &&
+      s.timer &&
+      s.classical_matched
+    ) {
+      setResult(s);
+    }
   }, [stored.data, result, status]);
 
   useEffect(() => {
@@ -268,22 +280,34 @@ export function HeartBenchmark() {
         </p>
 
         <div className="mt-4 rounded-md border border-border bg-secondary p-3 text-sm">
-          <strong>Fair experimental comparison.</strong>
+          <strong>Comparison conditions — including what is not matched.</strong>
           <span className="mt-2 flex flex-wrap gap-2">
             {[
-              "Same dataset",
-              "Same features",
-              "Same split",
-              "Same seed",
-              "Same test set",
-              "Same evaluation protocol",
-              "No test-label tuning",
-            ].map((t) => (
-              <span key={t} className="rounded-full border border-border px-2.5 py-0.5 text-xs">
-                {t}
+              ["Same dataset", true],
+              [
+                result
+                  ? `Features NOT matched (classical ${result.dataset.features} vs quantum ${result.best_quantum.feature_dimensions})`
+                  : "Features NOT matched in the headline arms",
+                false,
+              ],
+              ["Same split", true],
+              ["Same seed", true],
+              ["Same test set", true],
+              ["Same evaluation protocol", true],
+              ["No test-label tuning", true],
+            ].map(([t, ok]) => (
+              <span
+                key={String(t)}
+                className={`rounded-full border px-2.5 py-0.5 text-xs ${ok ? "border-border" : "border-destructive text-destructive"}`}
+              >
+                {ok ? "✓" : "✕"} {String(t)}
               </span>
             ))}
           </span>
+          <p className="mt-2 text-xs text-muted-foreground">
+            A feature-matched classical arm is trained on exactly the features the quantum
+            configuration encodes and reported alongside the headline row.
+          </p>
         </div>
 
         <ol className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -345,6 +369,94 @@ export function HeartBenchmark() {
           </p>
         )}
       </GlassPanel>
+
+      {result ? (
+        <GlassPanel className="p-5">
+          <h4 className="text-base font-semibold">Reviewer disclosures — read these first</h4>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Three things a statistician would check. We state them before they are asked.
+          </p>
+
+          <div className="mt-4 space-y-4 text-sm">
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>1 · The accuracy gap is not statistically significant.</strong>
+              <p className="mt-1">{result.significance.interpretation}</p>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-4">
+                <Item k="Test records" v={String(result.significance.test_samples)} />
+                <Item
+                  k="Discordant pairs"
+                  v={String(result.significance.full_vs_quantum.discordant_pairs)}
+                />
+                <Item
+                  k="McNemar exact p"
+                  v={result.significance.full_vs_quantum.p_value.toFixed(4)}
+                />
+                <Item
+                  k="Matched-arm p"
+                  v={result.significance.matched_vs_quantum.p_value.toFixed(4)}
+                />
+              </dl>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {result.significance.method} Only-classical-correct{" "}
+                {result.significance.full_vs_quantum.only_first_correct}, only-quantum-correct{" "}
+                {result.significance.full_vs_quantum.only_second_correct}.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>
+                2 · Timings{" "}
+                {result.timer.advanced
+                  ? `are clipped by a ${result.timer.resolution_ms.toFixed(3)} ms clock step.`
+                  : "cannot be measured in this runtime."}
+              </strong>
+              <p className="mt-1">{result.timer.note}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Any duration displayed as “below timer resolution” is a clock limitation, not a claim
+                of zero work. The workload evidence is the operation count below.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>3 · The headline arms do not use the same features.</strong>
+              <p className="mt-1">{result.fair_comparison.feature_parity_note}</p>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-4">
+                <Item
+                  k="Classical (all features)"
+                  v={`${pct(result.classical.accuracy)} · ${result.dataset.features} features`}
+                />
+                <Item
+                  k="Classical (feature-matched)"
+                  v={`${pct(result.classical_matched.accuracy)} · ${result.classical_matched.feature_count} features`}
+                />
+                <Item
+                  k="Quantum kernel"
+                  v={`${pct(result.best_quantum.accuracy)} · ${result.best_quantum.feature_dimensions} encoded`}
+                />
+                <Item k="Matched features" v={result.classical_matched.features.join(", ")} />
+              </dl>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Feature-matched arm: precision {pct(result.classical_matched.precision)} · recall{" "}
+                {pct(result.classical_matched.recall)} · F1 {pct(result.classical_matched.f1)} ·
+                ROC-AUC {pct(result.classical_matched.roc_auc)}. It is the only like-for-like row.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>Kernel evaluations, checkable on screen.</strong>
+              <p className="mt-1 font-mono text-xs">
+                {result.best_quantum.kernel_evaluation_formula}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Train matrix {result.best_quantum.kernel_train_dim} (upper triangle only, diagonal
+                fixed at 1) plus test matrix {result.best_quantum.kernel_test_dim}. The count follows
+                from the split sizes, so it can be verified live.
+              </p>
+            </div>
+          </div>
+        </GlassPanel>
+      ) : null}
+
 
       {result ? (
         <>
