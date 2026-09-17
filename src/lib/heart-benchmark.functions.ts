@@ -794,6 +794,40 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
       };
     });
 
+    // --- feature-matched classical arm ---------------------------------------
+    // The headline classical baseline sees ALL 13 standardised features, while
+    // the quantum arm encodes only the selected few. That is NOT feature parity,
+    // so we also train the identical logistic regression on exactly the features
+    // the selected quantum configuration encodes, and report both.
+    const matchedIdx = Array.from(new Set(best.features.map((f) => FEATURE_NAMES.indexOf(f)))).filter(
+      (j) => j >= 0,
+    );
+    const matchedNames = matchedIdx.map((j) => FEATURE_NAMES[j]!);
+    const mTrainStart = performance.now();
+    const mModel = trainLogisticRegression(
+      Xtr.map((r) => matchedIdx.map((j) => r[j]!)),
+      ytr,
+    );
+    const mTrainMs = performance.now() - mTrainStart;
+    const mInferStart = performance.now();
+    const mScores = Xte.map((r) => {
+      let z = mModel.b;
+      matchedIdx.forEach((j, k) => {
+        z += mModel.w[k]! * r[j]!;
+      });
+      return 1 / (1 + Math.exp(-z));
+    });
+    const mInferMs = performance.now() - mInferStart;
+    const matchedMetrics = evaluate(mScores, yte, 0.5);
+
+    // --- statistical significance of the classical/quantum gap ---------------
+    const quantumCorrect = predictionTrace.map((t) => t.quantum_correct);
+    const classicalCorrect = predictionTrace.map((t) => t.classical_correct);
+    const matchedCorrect = mScores.map((s, i) => (s >= 0.5 ? 1 : 0) === yte[i]);
+    const mcFull = mcnemarExact(classicalCorrect, quantumCorrect);
+    const mcMatched = mcnemarExact(matchedCorrect, quantumCorrect);
+    const timer = probeTimerResolution();
+
     const cTotal = cTrainMs + cInferMs;
     const qTotal = best.total_time_ms;
     const ratio = (a: number, b: number) => (b === 0 ? 0 : a / b);
