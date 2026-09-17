@@ -193,9 +193,31 @@ export type BenchmarkResult = {
   accuracy_difference: number;
   accuracy_difference_pp: number;
   quantum_exceeds_classical: boolean;
+  classical_matched: MetricSet & {
+    model: string;
+    features: string[];
+    feature_count: number;
+    training_time_ms: number;
+    inference_time_ms: number;
+    total_time_ms: number;
+  };
+  significance: {
+    method: string;
+    test_samples: number;
+    full_vs_quantum: ReturnType<typeof mcnemarExact>;
+    matched_vs_quantum: ReturnType<typeof mcnemarExact>;
+    interpretation: string;
+  };
+  timer: {
+    advanced: boolean;
+    resolution_ms: number;
+    spins: number;
+    note: string;
+  };
   fair_comparison: {
     same_dataset: boolean;
     same_features: boolean;
+    feature_parity_note: string;
     same_split: boolean;
     same_seed: boolean;
     same_test_set: boolean;
