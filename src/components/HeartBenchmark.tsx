@@ -38,7 +38,7 @@ const ms = (v: number) =>
       ? `${v.toFixed(2)} ms`
       : v > 0
         ? `${(v * 1000).toFixed(1)} µs`
-        : "0 ms";
+        : "below timer resolution";
 const signed = (v: number, f: (n: number) => string) => `${v > 0 ? "+" : ""}${f(v)}`;
 const signedMs = (v: number) => `${v > 0 ? "+" : "−"}${ms(Math.abs(v))}`;
 
