@@ -745,29 +745,55 @@ export function HeartBenchmark() {
 
             <GlassPanel className="p-5">
               <h4 className="text-sm font-semibold">ROC curves (test predictions)</h4>
-              <div className="mt-4 h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rocData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="fpr" fontSize={12} label={{ value: "FPR", position: "insideBottom", offset: -2 }} />
-                    <YAxis domain={[0, 1]} fontSize={12} />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="Classical" stroke="hsl(var(--primary))" dot={false} />
-                    <Line
-                      type="monotone"
-                      dataKey="Quantum"
-                      stroke="hsl(var(--accent-foreground))"
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {rocData.length === 0 ? (
+                <p className="mt-4 rounded-md border border-border bg-secondary p-3 text-sm">
+                  No curve data available for this run — the stored result contains{" "}
+                  {result.classical.roc_curve?.length ?? 0} classical and{" "}
+                  {result.quantum.roc_curve?.length ?? 0} quantum curve points, so nothing is
+                  plotted. The axes are not drawn over an empty chart.
+                </p>
+              ) : (
+                <div className="mt-4 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={rocData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis
+                        dataKey="fpr"
+                        type="number"
+                        domain={[0, 1]}
+                        fontSize={12}
+                        label={{ value: "FPR", position: "insideBottom", offset: -2 }}
+                      />
+                      <YAxis domain={[0, 1]} fontSize={12} />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="stepAfter"
+                        dataKey="Classical"
+                        stroke="hsl(var(--primary))"
+                        dot={false}
+                        connectNulls
+                      />
+                      <Line
+                        type="stepAfter"
+                        dataKey="Quantum"
+                        stroke="hsl(var(--accent-foreground))"
+                        dot={false}
+                        connectNulls
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">
                 ROC-AUC — classical {n3(result.classical.roc_auc)} · quantum{" "}
                 {n3(result.quantum.roc_auc)}, both computed from continuous scores, not hard labels.
+                Plotted from the {result.classical.roc_curve?.length ?? 0} classical and{" "}
+                {result.quantum.roc_curve?.length ?? 0} quantum operating points actually produced by
+                the run.
               </p>
             </GlassPanel>
+
 
             <GlassPanel className="p-5">
               <h4 className="text-sm font-semibold">Confusion matrices (test set)</h4>
