@@ -950,6 +950,114 @@ export function HeartBenchmark() {
             </GlassPanel>
           </div>
 
+          {diagnostics ? (
+            <GlassPanel className="p-5">
+              <h4 className="text-sm font-semibold">Quantum advantage diagnostics</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                The same inputs the ROC chart uses, recomputed here from the {diagnostics.samples}{" "}
+                per-record test predictions. If a reported AUC disagrees with the recomputed value,
+                the reported figure is wrong — not the chart.
+              </p>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[42rem] text-sm">
+                  <caption className="sr-only">Recomputed ROC and AUC inputs per arm</caption>
+                  <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      {[
+                        "Input",
+                        "Classical",
+                        "Quantum",
+                      ].map((h) => (
+                        <th key={h} scope="col" className="px-3 py-2">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {(
+                      [
+                        ["Positives / negatives in test set", (a: Arm) => `${a.pos} / ${a.neg}`],
+                        ["TPR at the decision threshold", (a: Arm) => (a.tpr === null ? "—" : n3(a.tpr))],
+                        ["FPR at the decision threshold", (a: Arm) => (a.fpr === null ? "—" : n3(a.fpr))],
+                        ["TP / FP counts used", (a: Arm) => `${a.tp} / ${a.fp}`],
+                        ["ROC-AUC reported by the run", (a: Arm) => n3(a.reported)],
+                        [
+                          "ROC-AUC recomputed here (rank method)",
+                          (a: Arm) => (a.auc === null ? "—" : n3(a.auc)),
+                        ],
+                        [
+                          "Difference (recomputed − reported)",
+                          (a: Arm) => (a.delta === null ? "—" : signed(a.delta, n3)),
+                        ],
+                        ["Curve points plotted", (a: Arm) => String(a.curve_points)],
+                      ] as [string, (a: Arm) => string][]
+                    ).map(([label, f]) => (
+                      <tr key={label}>
+                        <th scope="row" className="px-3 py-2 text-left font-medium">
+                          {label}
+                        </th>
+                        <td className="px-3 py-2 tabular-nums">{f(diagnostics.classical)}</td>
+                        <td className="px-3 py-2 tabular-nums">{f(diagnostics.quantum)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <ul className="mt-4 space-y-1 text-sm">
+                {diagnostics.flags.length === 0 ? (
+                  <li className="text-muted-foreground">
+                    No inconsistency found: both recomputed AUCs match the reported values to three
+                    decimals, and both curves carry plotted points.
+                  </li>
+                ) : (
+                  diagnostics.flags.map((f) => (
+                    <li key={f} className="rounded-md border border-border bg-secondary p-2">
+                      {f}
+                    </li>
+                  ))
+                )}
+              </ul>
+
+              <div className="mt-5 border-t border-border pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h5 className="text-sm font-semibold">AI discrepancy explainer</h5>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={explain}
+                    disabled={explaining}
+                  >
+                    {explaining ? "Analysing…" : "Explain these numbers"}
+                  </Button>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Sends only the measured numbers above — no patient records — to the AI service and
+                  asks what changed in the ROC/AUC inputs and what could cause it. The reply is an
+                  AI-written interpretation, not a measurement, and no figure on this page comes from
+                  it.
+                </p>
+                {explainError ? (
+                  <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    {explainError}
+                  </p>
+                ) : null}
+                {explanation ? (
+                  <div className="mt-3 rounded-md border border-border bg-secondary p-3">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {explanation.summary}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Generated by {explanation.model} at{" "}
+                      {new Date(explanation.generated_at).toISOString()}.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </GlassPanel>
+          ) : null}
+
           <GlassPanel className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h4 className="text-sm font-semibold">Per-sample prediction trace</h4>
