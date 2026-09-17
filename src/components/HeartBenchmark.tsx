@@ -155,9 +155,49 @@ export function HeartBenchmark() {
 
   const rocData = useMemo(() => {
     if (!result) return [];
-    const cCurve = result.classical.roc_curve ?? [];
-    const qCurve = result.quantum.roc_curve ?? [];
+    /**
+     * Prefer the fpr/tpr operating points the run produced. If a stored result
+     * predates those arrays, rebuild the curve from the per-record test scores
+     * so the panel still plots measured values rather than nothing.
+     */
+    const fromTraces = (side: "classical" | "quantum") => {
+      const traces = result.prediction_trace ?? [];
+      if (traces.length === 0) return [] as { fpr: number; tpr: number }[];
+      const rows = traces.map((t: any) => ({
+        score: side === "classical" ? t.classical_score : t.quantum_score,
+        label:
+          (side === "classical" ? t.classical_correct : t.quantum_correct)
+            ? side === "classical"
+              ? t.classical_prediction
+              : t.quantum_prediction
+            : 1 - (side === "classical" ? t.classical_prediction : t.quantum_prediction),
+      }));
+      const pos = rows.filter((r: { score: number; label: number }) => r.label === 1).length;
+      const neg = rows.length - pos;
+      if (pos === 0 || neg === 0) return [] as { fpr: number; tpr: number }[];
+      const sorted = [...rows].sort((a, b) => b.score - a.score);
+      let tp = 0;
+      let fp = 0;
+      const pts = [{ fpr: 0, tpr: 0 }];
+      for (const r of sorted) {
+        if (r.label === 1) tp += 1;
+        else fp += 1;
+        pts.push({ fpr: fp / neg, tpr: tp / pos });
+      }
+      return pts;
+    };
+    const cCurve =
+      result.classical.roc_curve?.length ? result.classical.roc_curve : fromTraces("classical");
+    const qCurve =
+      result.quantum.roc_curve?.length ? result.quantum.roc_curve : fromTraces("quantum");
+    if (import.meta.env.DEV) {
+      console.debug("[HeartBenchmark] ROC points", {
+        classical: cCurve.length,
+        quantum: qCurve.length,
+      });
+    }
     if (cCurve.length === 0 && qCurve.length === 0) return [];
+
     // Plot the measured operating points themselves — every distinct FPR either
     // arm produced — rather than resampling onto a fixed grid, so short curves
     // still draw.
@@ -578,7 +618,16 @@ export function HeartBenchmark() {
             </dl>
 
             <div className="mt-5 space-y-3">
-              <AccuracyBar label="Classical accuracy" value={result.classical.accuracy} tone="primary" />
+              <AccuracyBar
+                label="Classical accuracy (all 13 features)"
+                value={result.classical.accuracy}
+                tone="primary"
+              />
+              <AccuracyBar
+                label="Classical accuracy (feature-matched — the like-for-like row)"
+                value={result.classical_matched.accuracy}
+                tone="primary"
+              />
               <AccuracyBar
                 label="Best quantum accuracy"
                 value={result.best_quantum.accuracy}
@@ -589,15 +638,28 @@ export function HeartBenchmark() {
             <p className="mt-4 text-sm">
               {result.quantum_exceeds_classical
                 ? `Under the evaluated experimental configuration, the best quantum-kernel model achieved higher test accuracy than the classical logistic-regression baseline (${pct(result.best_quantum.accuracy)} vs ${pct(result.classical.accuracy)}, +${Math.abs(result.accuracy_difference_pp).toFixed(1)} percentage points). Performance is configuration- and dataset-dependent; this is not a general quantum-advantage result.`
-                : `Under the evaluated configurations, the classical baseline achieved higher or equal test accuracy (${pct(result.classical.accuracy)} vs ${pct(result.best_quantum.accuracy)}). Best measured quantum configuration did not exceed the classical baseline. The quantum result remains an experimental benchmark.`}
+                : `Under the evaluated configurations, the classical baseline achieved higher or equal test accuracy (${pct(result.classical.accuracy)} vs ${pct(result.best_quantum.accuracy)}). Best measured quantum configuration did not exceed the classical baseline. The quantum result remains an experimental benchmark.`}{" "}
+              {result.significance
+                ? `McNemar exact p = ${result.significance.full_vs_quantum.p_value.toFixed(4)} on ${result.significance.full_vs_quantum.discordant_pairs} discordant record${result.significance.full_vs_quantum.discordant_pairs === 1 ? "" : "s"}: the difference between the two arms is not statistically distinguishable from noise, whichever arm is numerically ahead.`
+                : null}
+
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Selection rule: {result.evaluation_protocol.selection_rule} Highest test accuracy
-              observed anywhere in the sweep was {pct(result.best_quantum_by_test.accuracy)} (
-              {result.best_quantum_by_test.label}); it is shown for transparency only and was not
-              used for selection. Full sweep runtime {ms(result.sweep_runtime_ms)} across{" "}
-              {result.quantum_experiments.length} configurations.
+              Selection rule: {result.evaluation_protocol.selection_rule} Full sweep runtime{" "}
+              {ms(result.sweep_runtime_ms)} across {result.quantum_experiments.length}{" "}
+              configurations.
             </p>
+            <p className="mt-2 rounded-md border border-border bg-secondary p-3 text-xs">
+              <strong>Do not read the sweep maximum as a quantum result.</strong> The highest test
+              accuracy appearing anywhere in the sweep is{" "}
+              {pct(result.best_quantum_by_test.accuracy)} ({result.best_quantum_by_test.label}) —
+              numerically above the classical baseline of {pct(result.classical.accuracy)}. That
+              figure was picked by looking at the held-out test labels across{" "}
+              {result.quantum_experiments.length} configurations, so it is an optimistically biased
+              number, not a measured advantage. The reported quantum arm above is the one selected on
+              inner-validation data only, before the test set was touched.
+            </p>
+
           </GlassPanel>
 
           <GlassPanel className="overflow-x-auto p-5">
@@ -800,13 +862,13 @@ export function HeartBenchmark() {
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={qualityData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="metric" fontSize={12} />
                     <YAxis domain={[0, 1]} fontSize={12} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="Classical" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Quantum" fill="hsl(var(--accent-foreground))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Classical" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Quantum" fill="var(--accent-foreground)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -817,11 +879,11 @@ export function HeartBenchmark() {
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={runtimeData} layout="vertical" margin={{ left: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis type="number" fontSize={12} />
                     <YAxis type="category" dataKey="stage" width={130} fontSize={11} />
                     <Tooltip />
-                    <Bar dataKey="µs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="µs" fill="var(--primary)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -840,7 +902,7 @@ export function HeartBenchmark() {
                 <div className="mt-4 h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={rocData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         dataKey="fpr"
                         type="number"
@@ -854,14 +916,14 @@ export function HeartBenchmark() {
                       <Line
                         type="stepAfter"
                         dataKey="Classical"
-                        stroke="hsl(var(--primary))"
+                        stroke="var(--primary)"
                         dot={false}
                         connectNulls
                       />
                       <Line
                         type="stepAfter"
                         dataKey="Quantum"
-                        stroke="hsl(var(--accent-foreground))"
+                        stroke="var(--accent-foreground)"
                         dot={false}
                         connectNulls
                       />
