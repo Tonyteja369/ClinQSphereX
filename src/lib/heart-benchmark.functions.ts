@@ -729,6 +729,8 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
 
     const quantumExperiments: QuantumExperiment[] = [];
     const kernelPreviews: KernelPreview[] = [];
+    const psdByKernel = new Map<string, PsdReport>();
+
     const testScoresByLabel = new Map<string, number[]>();
 
     const sweepStart = performance.now();
