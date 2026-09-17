@@ -42,6 +42,23 @@ const FEATURE_NAMES = [
   "thal",
 ];
 
+export type WilsonInterval = {
+  estimate: number;
+  lower: number;
+  upper: number;
+  successes: number;
+  n: number;
+  level: string;
+};
+
+export type PsdReport = {
+  checked: boolean;
+  min_eigenvalue: number;
+  repaired: boolean;
+  ridge: number;
+  note: string;
+};
+
 export type MetricSet = {
   accuracy: number;
   precision: number;
