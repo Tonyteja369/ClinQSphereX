@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusPill } from "@/components/StatusPill";
 import { lookupRegistryStudy, type RegistryRecord } from "@/lib/trials.functions";
+import { ensureOrgMembership } from "@/lib/org.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
