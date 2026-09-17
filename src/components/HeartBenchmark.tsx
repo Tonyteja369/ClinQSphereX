@@ -822,13 +822,13 @@ export function HeartBenchmark() {
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={qualityData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="metric" fontSize={12} />
                     <YAxis domain={[0, 1]} fontSize={12} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="Classical" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Quantum" fill="hsl(var(--accent-foreground))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Classical" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Quantum" fill="var(--accent-foreground)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -839,11 +839,11 @@ export function HeartBenchmark() {
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={runtimeData} layout="vertical" margin={{ left: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis type="number" fontSize={12} />
                     <YAxis type="category" dataKey="stage" width={130} fontSize={11} />
                     <Tooltip />
-                    <Bar dataKey="µs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="µs" fill="var(--primary)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -862,7 +862,7 @@ export function HeartBenchmark() {
                 <div className="mt-4 h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={rocData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         dataKey="fpr"
                         type="number"
@@ -876,14 +876,14 @@ export function HeartBenchmark() {
                       <Line
                         type="stepAfter"
                         dataKey="Classical"
-                        stroke="hsl(var(--primary))"
+                        stroke="var(--primary)"
                         dot={false}
                         connectNulls
                       />
                       <Line
                         type="stepAfter"
                         dataKey="Quantum"
-                        stroke="hsl(var(--accent-foreground))"
+                        stroke="var(--accent-foreground)"
                         dot={false}
                         connectNulls
                       />
