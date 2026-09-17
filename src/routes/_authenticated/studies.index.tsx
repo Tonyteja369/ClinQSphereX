@@ -103,6 +103,12 @@ function StudiesPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Each study owns its protocol version, eligibility criteria and research sites.
           </p>
+          {membership && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Workspace organisation: <span className="font-medium">{membership.orgName}</span>
+              {membership.linked ? " · linked to your account just now" : ""}
+            </p>
+          )}
         </div>
         <button
           onClick={() => setOpen(!open)}
