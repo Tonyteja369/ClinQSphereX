@@ -955,10 +955,13 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
     const mcFull = mcnemarExact(classicalCorrect, quantumCorrect);
     const mcMatched = mcnemarExact(matchedCorrect, quantumCorrect);
     const timer = probeTimerResolution();
+    const psdBest = psdByKernel.get(best.kernel_id) ?? null;
 
     const cTotal = cTrainMs + cInferMs;
     const qTotal = best.total_time_ms;
-    const ratio = (a: number, b: number) => (b === 0 ? 0 : a / b);
+    // Null rather than 0 when the denominator is unmeasurable — the UI renders "—".
+    const ratio = (a: number, b: number) => (b > 0 ? a / b : null);
+
     const accuracyDifference = best.accuracy - classicalMetrics.accuracy;
 
     const result: BenchmarkResult = {
