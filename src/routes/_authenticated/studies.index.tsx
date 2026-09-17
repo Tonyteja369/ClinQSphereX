@@ -5,6 +5,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusPill } from "@/components/StatusPill";
 import { lookupRegistryStudy, type RegistryRecord } from "@/lib/trials.functions";
+import { ensureOrgMembership } from "@/lib/org.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
@@ -31,6 +32,12 @@ function StudiesPage() {
   const [nctId, setNctId] = useState("");
   const [imported, setImported] = useState<RegistryRecord | null>(null);
   const lookup = useServerFn(lookupRegistryStudy);
+  const ensureMembership = useServerFn(ensureOrgMembership);
+
+  const { data: membership } = useQuery({
+    queryKey: ["org-membership"],
+    queryFn: async () => ensureMembership(),
+  });
 
   const { data: studies } = useQuery({
     queryKey: ["studies"],
@@ -56,28 +63,20 @@ function StudiesPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      // The profile table is readable org-wide, so this must be scoped to the
-      // signed-in user — an unscoped single-row read matches several rows and
-      // previously surfaced as "no organisation linked to this account".
-      let { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        // A stale access token reads as "signed out" here; refresh once before failing.
-        await supabase.auth.refreshSession();
-        ({ data: auth } = await supabase.auth.getUser());
-      }
-      if (!auth.user) throw new Error("Your session has expired — please sign in again");
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("org_id")
-        .eq("user_id", auth.user.id)
-        .maybeSingle();
-      if (profileError) throw profileError;
-      if (!profile?.org_id)
+      // Membership is resolved (and repaired) server-side, so a missing or
+      // unlinked profile row can no longer block study creation.
+      const membership = await ensureMembership();
+      if (!membership.orgId) {
         throw new Error(
-          "This account has no research organisation yet. Sign out and sign in again; if it persists, ask an administrator to add you to an organisation.",
+          membership.available.length
+            ? `Your account is not linked to a research organisation. Available organisations: ${membership.available
+                .map((o) => o.name)
+                .join(", ")}. Ask an administrator to add you to one.`
+            : "No research organisation exists in this workspace yet. Ask an administrator to create one before adding studies.",
         );
+      }
       const { error } = await supabase.from("studies").insert({
-        org_id: profile.org_id,
+        org_id: membership.orgId,
         code: form.code,
         title: form.title,
         sponsor: form.sponsor,
@@ -104,6 +103,12 @@ function StudiesPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Each study owns its protocol version, eligibility criteria and research sites.
           </p>
+          {membership && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Workspace organisation: <span className="font-medium">{membership.orgName}</span>
+              {membership.linked ? " · linked to your account just now" : ""}
+            </p>
+          )}
         </div>
         <button
           onClick={() => setOpen(!open)}
