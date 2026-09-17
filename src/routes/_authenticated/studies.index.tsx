@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusPill } from "@/components/StatusPill";
+import { lookupRegistryStudy, type RegistryRecord } from "@/lib/trials.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
@@ -32,12 +34,36 @@ function StudiesPage() {
     queryFn: async () => (await supabase.from("studies").select("*").order("created_at")).data ?? [],
   });
 
+  const importRegistry = useMutation({
+    mutationFn: async () => lookup({ data: { nctId } }),
+    onSuccess: (record) => {
+      setImported(record);
+      setForm({
+        code: record.nctId,
+        title: record.title,
+        sponsor: record.sponsor ?? "",
+        phase: (record.phase ?? "NA").replace("PHASE", "") || "NA",
+        target: record.enrollment ?? 50,
+      });
+      setOpen(true);
+      toast.success(`${record.nctId} loaded from ClinicalTrials.gov`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const create = useMutation({
     mutationFn: async () => {
-      const { data: profile } = await supabase
+      // The profile table is readable org-wide, so this must be scoped to the
+      // signed-in user — an unscoped single-row read matches several rows and
+      // previously surfaced as "no organisation linked to this account".
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("Your session has expired — please sign in again");
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("org_id")
+        .eq("user_id", auth.user.id)
         .maybeSingle();
+      if (profileError) throw profileError;
       if (!profile) throw new Error("No organisation linked to this account");
       const { error } = await supabase.from("studies").insert({
         org_id: profile.org_id,
