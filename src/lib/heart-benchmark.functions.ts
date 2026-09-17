@@ -371,7 +371,10 @@ function evaluate(scores: number[], labels: number[], threshold: number): Metric
   for (let i = 0; i < pairs.length; i += 1) {
     if (pairs[i]!.y === 1) cTp += 1;
     else cFp += 1;
-    if (i + 1 < pairs.length && pairs[i + 1]!.s === pairs[i]!.s) continue;
+    // Scores within 1e-9 are treated as tied. Kernel-SVM decision values pile
+    // up on the margin boundaries, and ordering those by floating-point noise
+    // produced an AUC that disagreed with a tie-aware recomputation.
+    if (i + 1 < pairs.length && Math.abs(pairs[i + 1]!.s - pairs[i]!.s) <= 1e-9) continue;
     const tpr = pos === 0 ? 0 : cTp / pos;
     const fpr = neg === 0 ? 0 : cFp / neg;
     auc += ((fpr - prevFpr) * (tpr + prevTpr)) / 2;
