@@ -154,18 +154,28 @@ export function HeartBenchmark() {
 
   const rocData = useMemo(() => {
     if (!result) return [];
-    const grid = Array.from({ length: 51 }, (_, i) => i / 50);
+    const cCurve = result.classical.roc_curve ?? [];
+    const qCurve = result.quantum.roc_curve ?? [];
+    if (cCurve.length === 0 && qCurve.length === 0) return [];
+    // Plot the measured operating points themselves — every distinct FPR either
+    // arm produced — rather than resampling onto a fixed grid, so short curves
+    // still draw.
+    const xs = Array.from(
+      new Set([0, 1, ...cCurve.map((p) => p.fpr), ...qCurve.map((p) => p.fpr)]),
+    ).sort((a, b) => a - b);
     const at = (curve: { fpr: number; tpr: number }[], x: number) => {
+      if (curve.length === 0) return null;
       let tpr = 0;
       for (const p of curve) if (p.fpr <= x) tpr = Math.max(tpr, p.tpr);
       return Number(tpr.toFixed(4));
     };
-    return grid.map((x) => ({
-      fpr: Number(x.toFixed(2)),
-      Classical: at(result.classical.roc_curve, x),
-      Quantum: at(result.quantum.roc_curve, x),
+    return xs.map((x) => ({
+      fpr: Number(x.toFixed(4)),
+      Classical: at(cCurve, x),
+      Quantum: at(qCurve, x),
     }));
   }, [result]);
+
 
   const preview = result
     ? (result.kernel_previews.find((p) => p.kernel_id === kernelId) ?? result.kernel_previews[0]!)
