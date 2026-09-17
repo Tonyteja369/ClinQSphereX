@@ -86,7 +86,11 @@ export function HeartBenchmark() {
       s?.kernel_previews?.length &&
       s.significance &&
       s.timer &&
-      s.classical_matched
+      s.classical_matched &&
+      s.intervals &&
+      s.kernel_timing &&
+      s.psd
+
     ) {
       setResult(s);
     }
