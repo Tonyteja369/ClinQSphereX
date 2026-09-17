@@ -155,9 +155,49 @@ export function HeartBenchmark() {
 
   const rocData = useMemo(() => {
     if (!result) return [];
-    const cCurve = result.classical.roc_curve ?? [];
-    const qCurve = result.quantum.roc_curve ?? [];
+    /**
+     * Prefer the fpr/tpr operating points the run produced. If a stored result
+     * predates those arrays, rebuild the curve from the per-record test scores
+     * so the panel still plots measured values rather than nothing.
+     */
+    const fromTraces = (side: "classical" | "quantum") => {
+      const traces = result.prediction_traces ?? [];
+      if (traces.length === 0) return [] as { fpr: number; tpr: number }[];
+      const rows = traces.map((t: any) => ({
+        score: side === "classical" ? t.classical_score : t.quantum_score,
+        label:
+          (side === "classical" ? t.classical_correct : t.quantum_correct)
+            ? side === "classical"
+              ? t.classical_prediction
+              : t.quantum_prediction
+            : 1 - (side === "classical" ? t.classical_prediction : t.quantum_prediction),
+      }));
+      const pos = rows.filter((r) => r.label === 1).length;
+      const neg = rows.length - pos;
+      if (pos === 0 || neg === 0) return [] as { fpr: number; tpr: number }[];
+      const sorted = [...rows].sort((a, b) => b.score - a.score);
+      let tp = 0;
+      let fp = 0;
+      const pts = [{ fpr: 0, tpr: 0 }];
+      for (const r of sorted) {
+        if (r.label === 1) tp += 1;
+        else fp += 1;
+        pts.push({ fpr: fp / neg, tpr: tp / pos });
+      }
+      return pts;
+    };
+    const cCurve =
+      result.classical.roc_curve?.length ? result.classical.roc_curve : fromTraces("classical");
+    const qCurve =
+      result.quantum.roc_curve?.length ? result.quantum.roc_curve : fromTraces("quantum");
+    if (import.meta.env.DEV) {
+      console.debug("[HeartBenchmark] ROC points", {
+        classical: cCurve.length,
+        quantum: qCurve.length,
+      });
+    }
     if (cCurve.length === 0 && qCurve.length === 0) return [];
+
     // Plot the measured operating points themselves — every distinct FPR either
     // arm produced — rather than resampling onto a fixed grid, so short curves
     // still draw.
