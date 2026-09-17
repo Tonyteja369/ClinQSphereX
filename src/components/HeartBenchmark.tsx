@@ -61,8 +61,6 @@ const ms = (v: number) =>
       : v > 0
         ? `${(v * 1000).toFixed(3)} µs`
         : "below timer resolution";
-const ci = (i: { lower: number; upper: number }) =>
-  `${(i.lower * 100).toFixed(1)}–${(i.upper * 100).toFixed(1)}%`;
 const signed = (v: number, f: (n: number) => string) => `${v > 0 ? "+" : ""}${f(v)}`;
 const signedMs = (v: number) => `${v > 0 ? "+" : "−"}${ms(Math.abs(v))}`;
 
