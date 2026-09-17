@@ -1,5 +1,28 @@
 # ClinQSphereX roadmap
 
+## Current — reviewer findings, pass 1 (benchmark correctness)
+- [x] Microsecond timing with 3 decimals, derived mean time per kernel entry, ratios guarded with "—"
+- [x] Wilson 95% intervals on every accuracy, shown beside the McNemar result
+- [x] Feature-parity statement naming which arm sees which features
+- [x] ROC panel plots measured operating points and states when no curve data exists
+- [x] PSD check and ridge repair on the Gram matrix before the SVM solver
+- [x] Separate pipeline labels for site-allocation QUBO vs kernel-classifier runs
+
+## Next — reviewer findings, pass 2 (demo data and integrity)
+- [ ] Reproducible seed: consents, tasks, a scheduled visit, non-zero enrolment
+- [ ] Reseed demo actors to coordinator@/reviewer@/investigator@demo.clinqsphere.tech
+- [ ] Single shared date-formatting utility; remove inline formatting
+- [ ] Cached ClinVar + GWAS fixtures behind a flag with a "cached response" badge
+- [ ] Hash-chained audit log with chain verification and revoked update/delete grants
+- [ ] Confirm notification enqueue shares a transaction with the status change
+
+## Next — reviewer findings, pass 3 (architecture)
+- [ ] SNOMED CT condition codes alongside free text
+- [ ] Temporal predicate criteria with an event-history table
+- [ ] De-identification layer and k=5 anonymity check
+- [ ] Test suite: unknown-never-passes, cross-org RLS, seed-42 golden file
+- [ ] Recruitment-bias comparison against the source registry
+
 ## Current — editorial authentication launch
 - [x] Rebuild authentication as a premium editorial biomedical product composition
 - [x] Integrate the supplied molten-DNA film as a scientific product visual with a still fallback

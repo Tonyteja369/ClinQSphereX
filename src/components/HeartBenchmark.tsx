@@ -31,16 +31,23 @@ const STEPS = [
 
 const n3 = (v: number) => v.toFixed(3);
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+/**
+ * Durations are measured in milliseconds but reported in microseconds with
+ * three decimals, because most stages here finish far below a millisecond.
+ */
 const ms = (v: number) =>
   v >= 1000
     ? `${(v / 1000).toFixed(3)} s`
     : v >= 1
-      ? `${v.toFixed(2)} ms`
+      ? `${v.toFixed(3)} ms`
       : v > 0
-        ? `${(v * 1000).toFixed(1)} µs`
+        ? `${(v * 1000).toFixed(3)} µs`
         : "below timer resolution";
+const ci = (i: { lower: number; upper: number }) =>
+  `${(i.lower * 100).toFixed(1)}–${(i.upper * 100).toFixed(1)}%`;
 const signed = (v: number, f: (n: number) => string) => `${v > 0 ? "+" : ""}${f(v)}`;
 const signedMs = (v: number) => `${v > 0 ? "+" : "−"}${ms(Math.abs(v))}`;
+
 
 export function HeartBenchmark() {
   const run = useServerFn(runHeartBenchmark);
@@ -79,7 +86,11 @@ export function HeartBenchmark() {
       s?.kernel_previews?.length &&
       s.significance &&
       s.timer &&
-      s.classical_matched
+      s.classical_matched &&
+      s.intervals &&
+      s.kernel_timing &&
+      s.psd
+
     ) {
       setResult(s);
     }
@@ -136,25 +147,36 @@ export function HeartBenchmark() {
             { stage: "Quantum training", ms: result.quantum.training_time_ms },
             { stage: "Classical inference", ms: result.classical.inference_time_ms },
             { stage: "Quantum inference", ms: result.quantum.inference_time_ms },
-          ].map((r) => ({ ...r, ms: Number(r.ms.toFixed(3)) }))
+          ].map((r) => ({ stage: r.stage, µs: Number((r.ms * 1000).toFixed(3)) }))
         : [],
     [result],
   );
 
+
   const rocData = useMemo(() => {
     if (!result) return [];
-    const grid = Array.from({ length: 51 }, (_, i) => i / 50);
+    const cCurve = result.classical.roc_curve ?? [];
+    const qCurve = result.quantum.roc_curve ?? [];
+    if (cCurve.length === 0 && qCurve.length === 0) return [];
+    // Plot the measured operating points themselves — every distinct FPR either
+    // arm produced — rather than resampling onto a fixed grid, so short curves
+    // still draw.
+    const xs = Array.from(
+      new Set([0, 1, ...cCurve.map((p) => p.fpr), ...qCurve.map((p) => p.fpr)]),
+    ).sort((a, b) => a - b);
     const at = (curve: { fpr: number; tpr: number }[], x: number) => {
+      if (curve.length === 0) return null;
       let tpr = 0;
       for (const p of curve) if (p.fpr <= x) tpr = Math.max(tpr, p.tpr);
       return Number(tpr.toFixed(4));
     };
-    return grid.map((x) => ({
-      fpr: Number(x.toFixed(2)),
-      Classical: at(result.classical.roc_curve, x),
-      Quantum: at(result.quantum.roc_curve, x),
+    return xs.map((x) => ({
+      fpr: Number(x.toFixed(4)),
+      Classical: at(cCurve, x),
+      Quantum: at(qCurve, x),
     }));
   }, [result]);
+
 
   const preview = result
     ? (result.kernel_previews.find((p) => p.kernel_id === kernelId) ?? result.kernel_previews[0]!)
@@ -453,6 +475,68 @@ export function HeartBenchmark() {
                 from the split sizes, so it can be verified live.
               </p>
             </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>4 · Confidence intervals on every accuracy.</strong>
+              <p className="mt-1">{result.intervals.note}</p>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-3">
+                <Item
+                  k="Classical (all features)"
+                  v={`${pct(result.classical.accuracy)} · 95% CI ${ci(result.intervals.classical)}`}
+                />
+                <Item
+                  k="Classical (feature-matched)"
+                  v={`${pct(result.classical_matched.accuracy)} · 95% CI ${ci(result.intervals.classical_matched)}`}
+                />
+                <Item
+                  k="Quantum kernel"
+                  v={`${pct(result.best_quantum.accuracy)} · 95% CI ${ci(result.intervals.quantum)}`}
+                />
+              </dl>
+              <p className="mt-2 text-xs text-muted-foreground">{result.intervals.method}</p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>5 · Cost per kernel entry.</strong>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-3">
+                <Item
+                  k="Kernel construction"
+                  v={ms(result.kernel_timing.total_kernel_ms)}
+                />
+                <Item
+                  k="Kernel evaluations"
+                  v={result.kernel_timing.kernel_evaluations.toLocaleString()}
+                />
+                <Item
+                  k="Mean per entry"
+                  v={
+                    result.kernel_timing.mean_per_entry_us === null
+                      ? "—"
+                      : `${result.kernel_timing.mean_per_entry_us.toFixed(3)} µs`
+                  }
+                />
+              </dl>
+              <p className="mt-2 text-xs text-muted-foreground">{result.kernel_timing.note}</p>
+            </div>
+
+            <div className="rounded-md border border-border bg-secondary p-3">
+              <strong>
+                6 · Kernel matrix {result.psd.repaired ? "required PSD repair." : "is positive semi-definite."}
+              </strong>
+              <p className="mt-1">{result.psd.note}</p>
+              <dl className="mt-2 grid gap-3 sm:grid-cols-3">
+                <Item
+                  k="Smallest eigenvalue"
+                  v={result.psd.checked ? result.psd.min_eigenvalue.toExponential(3) : "not evaluated"}
+                />
+                <Item k="Repair applied" v={result.psd.repaired ? "Yes" : "No"} />
+                <Item
+                  k="Diagonal ridge"
+                  v={result.psd.ridge > 0 ? result.psd.ridge.toExponential(3) : "0"}
+                />
+              </dl>
+            </div>
+
           </div>
         </GlassPanel>
       ) : null}
@@ -729,7 +813,7 @@ export function HeartBenchmark() {
             </GlassPanel>
 
             <GlassPanel className="p-5">
-              <h4 className="text-sm font-semibold">Computational cost (milliseconds)</h4>
+              <h4 className="text-sm font-semibold">Computational cost (microseconds)</h4>
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={runtimeData} layout="vertical" margin={{ left: 40 }}>
@@ -737,7 +821,7 @@ export function HeartBenchmark() {
                     <XAxis type="number" fontSize={12} />
                     <YAxis type="category" dataKey="stage" width={130} fontSize={11} />
                     <Tooltip />
-                    <Bar dataKey="ms" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="µs" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -745,29 +829,55 @@ export function HeartBenchmark() {
 
             <GlassPanel className="p-5">
               <h4 className="text-sm font-semibold">ROC curves (test predictions)</h4>
-              <div className="mt-4 h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rocData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="fpr" fontSize={12} label={{ value: "FPR", position: "insideBottom", offset: -2 }} />
-                    <YAxis domain={[0, 1]} fontSize={12} />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="Classical" stroke="hsl(var(--primary))" dot={false} />
-                    <Line
-                      type="monotone"
-                      dataKey="Quantum"
-                      stroke="hsl(var(--accent-foreground))"
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {rocData.length === 0 ? (
+                <p className="mt-4 rounded-md border border-border bg-secondary p-3 text-sm">
+                  No curve data available for this run — the stored result contains{" "}
+                  {result.classical.roc_curve?.length ?? 0} classical and{" "}
+                  {result.quantum.roc_curve?.length ?? 0} quantum curve points, so nothing is
+                  plotted. The axes are not drawn over an empty chart.
+                </p>
+              ) : (
+                <div className="mt-4 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={rocData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis
+                        dataKey="fpr"
+                        type="number"
+                        domain={[0, 1]}
+                        fontSize={12}
+                        label={{ value: "FPR", position: "insideBottom", offset: -2 }}
+                      />
+                      <YAxis domain={[0, 1]} fontSize={12} />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="stepAfter"
+                        dataKey="Classical"
+                        stroke="hsl(var(--primary))"
+                        dot={false}
+                        connectNulls
+                      />
+                      <Line
+                        type="stepAfter"
+                        dataKey="Quantum"
+                        stroke="hsl(var(--accent-foreground))"
+                        dot={false}
+                        connectNulls
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">
                 ROC-AUC — classical {n3(result.classical.roc_auc)} · quantum{" "}
                 {n3(result.quantum.roc_auc)}, both computed from continuous scores, not hard labels.
+                Plotted from the {result.classical.roc_curve?.length ?? 0} classical and{" "}
+                {result.quantum.roc_curve?.length ?? 0} quantum operating points actually produced by
+                the run.
               </p>
             </GlassPanel>
+
 
             <GlassPanel className="p-5">
               <h4 className="text-sm font-semibold">Confusion matrices (test set)</h4>
@@ -837,12 +947,17 @@ export function HeartBenchmark() {
               On {result.dataset.test_samples} held-out records from the UCI Heart Disease dataset,
               the selected quantum-kernel configuration reached a ROC-AUC of{" "}
               {n3(result.quantum.roc_auc)} compared with {n3(result.classical.roc_auc)} for the
-              classical logistic-regression baseline (accuracy {n3(result.quantum.accuracy)} vs{" "}
-              {n3(result.classical.accuracy)}). The quantum pipeline required{" "}
-              {result.comparison.total_time_ratio.toFixed(2)}× the total runtime of the classical
-              pipeline in this run, of which {ms(result.quantum.kernel_time_ms)} was kernel
-              construction.
+              classical logistic-regression baseline (accuracy {n3(result.quantum.accuracy)}, 95% CI{" "}
+              {ci(result.intervals.quantum)} vs {n3(result.classical.accuracy)}, 95% CI{" "}
+              {ci(result.intervals.classical)} — the intervals overlap). The quantum pipeline
+              required{" "}
+              {result.comparison.total_time_ratio === null
+                ? "an unmeasurable multiple of"
+                : `${result.comparison.total_time_ratio.toFixed(2)}× `}{" "}
+              the total runtime of the classical pipeline in this run, of which{" "}
+              {ms(result.quantum.kernel_time_ms)} was kernel construction.
             </p>
+
             <p className="mt-3 text-sm">
               Experimental quantum-kernel benchmark. Results are environment-dependent and
               dataset-specific and do not establish general quantum advantage. The quantum pipeline
@@ -880,14 +995,17 @@ function Item({ k, v }: { k: string; v: string }) {
   );
 }
 
-function Ratio({ label, value }: { label: string; value: number }) {
+function Ratio({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium tabular-nums">{value.toFixed(2)}×</dd>
+      <dd className="font-medium tabular-nums" title={value === null ? "Denominator measured below timer resolution — no ratio can be derived." : undefined}>
+        {value === null ? "—" : `${value.toFixed(2)}×`}
+      </dd>
     </div>
   );
 }
+
 
 function Summary({ title, name, value }: { title: string; name: string; value: string }) {
   return (

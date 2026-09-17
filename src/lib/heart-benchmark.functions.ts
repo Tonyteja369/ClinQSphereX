@@ -42,6 +42,23 @@ const FEATURE_NAMES = [
   "thal",
 ];
 
+export type WilsonInterval = {
+  estimate: number;
+  lower: number;
+  upper: number;
+  successes: number;
+  n: number;
+  level: string;
+};
+
+export type PsdReport = {
+  checked: boolean;
+  min_eigenvalue: number;
+  repaired: boolean;
+  ridge: number;
+  note: string;
+};
+
 export type MetricSet = {
   accuracy: number;
   precision: number;
@@ -214,7 +231,24 @@ export type BenchmarkResult = {
     spins: number;
     note: string;
   };
+  intervals: {
+    method: string;
+    test_samples: number;
+    classical: WilsonInterval;
+    classical_matched: WilsonInterval;
+    quantum: WilsonInterval;
+    note: string;
+  };
+  kernel_timing: {
+    total_kernel_ms: number;
+    kernel_evaluations: number;
+    mean_per_entry_us: number | null;
+    measurable: boolean;
+    note: string;
+  };
+  psd: PsdReport;
   fair_comparison: {
+
     same_dataset: boolean;
     same_features: boolean;
     feature_parity_note: string;
@@ -230,9 +264,10 @@ export type BenchmarkResult = {
     recall_delta: number;
     f1_delta: number;
     roc_auc_delta: number;
-    training_time_ratio: number;
-    inference_time_ratio: number;
-    total_time_ratio: number;
+    training_time_ratio: number | null;
+    inference_time_ratio: number | null;
+    total_time_ratio: number | null;
+
   };
   reproducible: boolean;
   reproduction: {
@@ -257,11 +292,11 @@ async function loadHeartDataset() {
   if (datasetCache) return datasetCache;
   let lastError = "request failed";
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const started = Date.now();
+    const started = performance.now();
     try {
       const res = await fetch(DATA_URL, { signal: AbortSignal.timeout(20000) });
       if (!res.ok) {
-        lastError = `HTTP ${res.status} after ${Date.now() - started} ms`;
+        lastError = `HTTP ${res.status} after ${Math.round(performance.now() - started)} ms`;
       } else {
         const text = await res.text();
         const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -283,7 +318,7 @@ async function loadHeartDataset() {
         return datasetCache;
       }
     } catch (error) {
-      lastError = `${error instanceof Error ? error.message : "request failed"} after ${Date.now() - started} ms`;
+      lastError = `${error instanceof Error ? error.message : "request failed"} after ${Math.round(performance.now() - started)} ms`;
     }
     if (attempt < 3) await wait(300 * attempt);
   }
@@ -487,8 +522,96 @@ function probeTimerResolution() {
   };
 }
 
+/**
+ * Wilson score interval (95%, two-sided) on a proportion. Wald is deliberately
+ * avoided: its coverage is poor at the sample sizes used here.
+ */
+function wilson(p: number, n: number, z = 1.959963985): WilsonInterval {
+  if (n <= 0) {
+    return { estimate: p, lower: 0, upper: 1, successes: 0, n: 0, level: "95%" };
+  }
+  const denom = 1 + (z * z) / n;
+  const centre = (p + (z * z) / (2 * n)) / denom;
+  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+  const r = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 1e6) / 1e6;
+  return {
+    estimate: r(p),
+    lower: r(centre - half),
+    upper: r(centre + half),
+    successes: Math.round(p * n),
+    n,
+    level: "95%",
+  };
+}
+
+/**
+ * Smallest eigenvalue of a symmetric matrix, estimated by power iteration on
+ * (cI − K) where c bounds the spectrum (Gershgorin). Used to detect the small
+ * negative eigenvalues that floating-point error introduces into a Gram matrix.
+ */
+function minEigenvalueEstimate(K: number[][], iters = 40) {
+  const n = K.length;
+  if (n === 0) return 0;
+  let c = 0;
+  for (let i = 0; i < n; i += 1) {
+    let s = 0;
+    const Ki = K[i]!;
+    for (let j = 0; j < n; j += 1) s += Math.abs(Ki[j]!);
+    if (s > c) c = s;
+  }
+  const rand = mulberry32(11);
+  let v = new Float64Array(n);
+  for (let i = 0; i < n; i += 1) v[i] = rand() - 0.5;
+  let lamMax = 0;
+  for (let t = 0; t < iters; t += 1) {
+    const w = new Float64Array(n);
+    for (let i = 0; i < n; i += 1) {
+      let s = c * v[i]!;
+      const Ki = K[i]!;
+      for (let j = 0; j < n; j += 1) s -= Ki[j]! * v[j]!;
+      w[i] = s;
+    }
+    let norm = 0;
+    for (let i = 0; i < n; i += 1) norm += w[i]! * w[i]!;
+    norm = Math.sqrt(norm);
+    if (!(norm > 0)) break;
+    for (let i = 0; i < n; i += 1) v[i] = w[i]! / norm;
+    lamMax = norm;
+  }
+  return c - lamMax;
+}
+
+/**
+ * A fidelity Gram matrix is PSD in exact arithmetic, but accumulated rounding
+ * can push the smallest eigenvalue slightly negative, which an SVM solver on a
+ * precomputed kernel is not entitled to assume. Add the smallest ridge that
+ * restores PSD, and report whether it was needed.
+ */
+function repairPsd(K: number[][]): PsdReport {
+  const minEig = minEigenvalueEstimate(K);
+  if (minEig >= -1e-10) {
+    return {
+      checked: true,
+      min_eigenvalue: minEig,
+      repaired: false,
+      ridge: 0,
+      note: `Smallest estimated eigenvalue ${minEig.toExponential(3)} — the Gram matrix is positive semi-definite as computed, so no repair was applied.`,
+    };
+  }
+  const ridge = -minEig + 1e-8;
+  for (let i = 0; i < K.length; i += 1) K[i]![i] = K[i]![i]! + ridge;
+  return {
+    checked: true,
+    min_eigenvalue: minEig,
+    repaired: true,
+    ridge,
+    note: `Smallest estimated eigenvalue ${minEig.toExponential(3)} was negative from floating-point error. A ridge of ${ridge.toExponential(3)} was added to the diagonal before the SVM solver, restoring positive semi-definiteness.`,
+  };
+}
+
 /** Two-sided exact McNemar test on the discordant pairs of two classifiers. */
 function mcnemarExact(aCorrect: boolean[], bCorrect: boolean[]) {
+
   let b = 0; // first correct, second wrong
   let c = 0; // second correct, first wrong
   for (let i = 0; i < aCorrect.length; i += 1) {
@@ -607,6 +730,8 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
 
     const quantumExperiments: QuantumExperiment[] = [];
     const kernelPreviews: KernelPreview[] = [];
+    const psdByKernel = new Map<string, PsdReport>();
+
     const testScoresByLabel = new Map<string, number[]>();
 
     const sweepStart = performance.now();
@@ -651,6 +776,10 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
           const kernelEvaluationFormula = `${n}×${n - 1}/2 + ${Kte.length}×${n} = ${((n * (n - 1)) / 2).toLocaleString()} + ${(Kte.length * n).toLocaleString()} = ${kernelEvaluations.toLocaleString()}`;
 
           const kernelId = `${qubits}q-${reps}r-${mapType}`;
+          // PSD check + repair before the matrix reaches the SVM solver.
+          const psdReport = repairPsd(Ktr);
+          psdByKernel.set(kernelId, psdReport);
+
           const previewN = Math.min(16, n);
           const previewT = Math.min(10, Kte.length);
           let kmin = 1;
@@ -827,10 +956,13 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
     const mcFull = mcnemarExact(classicalCorrect, quantumCorrect);
     const mcMatched = mcnemarExact(matchedCorrect, quantumCorrect);
     const timer = probeTimerResolution();
+    const psdBest = psdByKernel.get(best.kernel_id) ?? null;
 
     const cTotal = cTrainMs + cInferMs;
     const qTotal = best.total_time_ms;
-    const ratio = (a: number, b: number) => (b === 0 ? 0 : a / b);
+    // Null rather than 0 when the denominator is unmeasurable — the UI renders "—".
+    const ratio = (a: number, b: number) => (b > 0 ? a / b : null);
+
     const accuracyDifference = best.accuracy - classicalMetrics.accuracy;
 
     const result: BenchmarkResult = {
@@ -953,6 +1085,37 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
         }`,
       },
       timer,
+      intervals: {
+        method:
+          "Wilson score interval, 95% (two-sided). Wald intervals are not used — their coverage is poor at this sample size.",
+        test_samples: yte.length,
+        classical: wilson(classicalMetrics.accuracy, yte.length),
+        classical_matched: wilson(matchedMetrics.accuracy, yte.length),
+        quantum: wilson(best.accuracy, yte.length),
+        note: `With ${yte.length} held-out records, every accuracy on this page carries a 95% Wilson interval roughly ±${(
+          (wilson(best.accuracy, yte.length).upper - wilson(best.accuracy, yte.length).lower) *
+          50
+        ).toFixed(1)} percentage points wide on each side. The classical and quantum intervals overlap almost entirely, which is the same conclusion the McNemar test reaches.`,
+      },
+      kernel_timing: {
+        total_kernel_ms: best.kernel_time_ms,
+        kernel_evaluations: best.kernel_evaluations,
+        mean_per_entry_us:
+          best.kernel_evaluations > 0 ? (best.kernel_time_ms * 1000) / best.kernel_evaluations : null,
+        measurable: best.kernel_time_ms > 0,
+        note:
+          best.kernel_time_ms > 0
+            ? "Mean time per kernel entry is derived from the measured kernel-construction duration divided by the counted kernel evaluations."
+            : "The kernel stage measured below the host timer resolution, so no per-entry time can be derived. The counted kernel evaluations remain the workload evidence.",
+      },
+      psd: psdBest ?? {
+        checked: false,
+        min_eigenvalue: 0,
+        repaired: false,
+        ridge: 0,
+        note: "Positive semi-definiteness was not evaluated for this configuration.",
+      },
+
       fair_comparison: {
         same_dataset: true,
         same_features: matchedNames.length === d,

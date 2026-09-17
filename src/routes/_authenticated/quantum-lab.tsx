@@ -116,8 +116,9 @@ function QuantumLab() {
           Recorded optimisation experiments
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Site and slot allocation runs, with the configuration and runtime actually recorded by the
-          backend.
+          Two separate pipelines record here. Site-allocation QUBO runs solve a binary assignment
+          problem; kernel-classifier runs benchmark a simulated quantum kernel. Each row states which
+          pipeline produced it, so the two are never read as one experiment.
         </p>
         <div className="mt-4">
           {error ? (
@@ -131,34 +132,47 @@ function QuantumLab() {
             />
           ) : (
             <ul className="space-y-3">
-              {data!.map((r: any) => (
-                <li key={r.id} className="surface p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium">
-                      {r.studies?.code ?? "study"} · {r.method}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(r.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-4">
-                    {[
-                      ["Backend", r.backend],
-                      ["Binary variables", r.qubo_size],
-                      ["Objective", Number(r.objective)],
-                      ["Runtime", `${r.runtime_ms} ms`],
-                    ].map(([k, v]) => (
-                      <div key={String(k)}>
-                        <dt className="text-xs text-muted-foreground">{k}</dt>
-                        <dd className="mt-0.5 font-medium tabular-nums">{String(v)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </li>
-              ))}
+              {data!.map((r: any) => {
+                const isKernel = String(r.method).includes("kernel");
+                const pipeline = isKernel
+                  ? "Kernel classifier pipeline"
+                  : "Site allocation QUBO pipeline";
+                return (
+                  <li key={r.id} className="surface p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm font-medium">
+                        {r.studies?.code ?? "study"} · {r.method}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(r.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                      {pipeline}
+                    </p>
+                    <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-4">
+                      {[
+                        ["Backend", r.backend],
+                        [
+                          isKernel ? "Qubits encoded" : "Binary variables",
+                          r.qubo_size,
+                        ],
+                        [isKernel ? "ROC-AUC" : "Objective", Number(r.objective)],
+                        ["Runtime", `${r.runtime_ms} ms`],
+                      ].map(([k, v]) => (
+                        <div key={String(k)}>
+                          <dt className="text-xs text-muted-foreground">{k}</dt>
+                          <dd className="mt-0.5 font-medium tabular-nums">{String(v)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
+
       </section>
     </div>
   );
