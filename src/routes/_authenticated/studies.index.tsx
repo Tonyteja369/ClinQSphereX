@@ -36,7 +36,7 @@ function StudiesPage() {
 
   const { data: membership } = useQuery({
     queryKey: ["org-membership"],
-    queryFn: async () => ensureMembership({ data: {} }),
+    queryFn: async () => ensureMembership(),
   });
 
   const { data: studies } = useQuery({
@@ -65,7 +65,7 @@ function StudiesPage() {
     mutationFn: async () => {
       // Membership is resolved (and repaired) server-side, so a missing or
       // unlinked profile row can no longer block study creation.
-      const membership = await ensureMembership({ data: {} });
+      const membership = await ensureMembership();
       if (!membership.orgId) {
         throw new Error(
           membership.available.length
