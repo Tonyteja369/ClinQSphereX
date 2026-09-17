@@ -59,7 +59,12 @@ function StudiesPage() {
       // The profile table is readable org-wide, so this must be scoped to the
       // signed-in user — an unscoped single-row read matches several rows and
       // previously surfaced as "no organisation linked to this account".
-      const { data: auth } = await supabase.auth.getUser();
+      let { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) {
+        // A stale access token reads as "signed out" here; refresh once before failing.
+        await supabase.auth.refreshSession();
+        ({ data: auth } = await supabase.auth.getUser());
+      }
       if (!auth.user) throw new Error("Your session has expired — please sign in again");
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -67,7 +72,10 @@ function StudiesPage() {
         .eq("user_id", auth.user.id)
         .maybeSingle();
       if (profileError) throw profileError;
-      if (!profile) throw new Error("No organisation linked to this account");
+      if (!profile?.org_id)
+        throw new Error(
+          "This account has no research organisation yet. Sign out and sign in again; if it persists, ask an administrator to add you to an organisation.",
+        );
       const { error } = await supabase.from("studies").insert({
         org_id: profile.org_id,
         code: form.code,
