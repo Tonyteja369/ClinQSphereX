@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatusPill } from "@/components/StatusPill";
+import { lookupRegistryStudy, type RegistryRecord } from "@/lib/trials.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
@@ -26,18 +28,45 @@ function StudiesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ code: "", title: "", sponsor: "", phase: "II", target: 50 });
+  const [nctId, setNctId] = useState("");
+  const [imported, setImported] = useState<RegistryRecord | null>(null);
+  const lookup = useServerFn(lookupRegistryStudy);
 
   const { data: studies } = useQuery({
     queryKey: ["studies"],
     queryFn: async () => (await supabase.from("studies").select("*").order("created_at")).data ?? [],
   });
 
+  const importRegistry = useMutation({
+    mutationFn: async () => lookup({ data: { nctId } }),
+    onSuccess: (record) => {
+      setImported(record);
+      setForm({
+        code: record.nctId,
+        title: record.title,
+        sponsor: record.sponsor ?? "",
+        phase: (record.phase ?? "NA").replace("PHASE", "") || "NA",
+        target: record.enrollment ?? 50,
+      });
+      setOpen(true);
+      toast.success(`${record.nctId} loaded from ClinicalTrials.gov`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const create = useMutation({
     mutationFn: async () => {
-      const { data: profile } = await supabase
+      // The profile table is readable org-wide, so this must be scoped to the
+      // signed-in user — an unscoped single-row read matches several rows and
+      // previously surfaced as "no organisation linked to this account".
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("Your session has expired — please sign in again");
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("org_id")
+        .eq("user_id", auth.user.id)
         .maybeSingle();
+      if (profileError) throw profileError;
       if (!profile) throw new Error("No organisation linked to this account");
       const { error } = await supabase.from("studies").insert({
         org_id: profile.org_id,
@@ -75,6 +104,50 @@ function StudiesPage() {
           {open ? "Cancel" : "New study"}
         </button>
       </header>
+
+      <section className="surface p-5">
+        <h2 className="text-sm font-semibold">Start from a public registry record</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          ClinicalTrials.gov (U.S. National Library of Medicine) is the connected registry. Enter a
+          registration ID and the real record is fetched and used to prefill the form below — you
+          can still edit every field before creating the study.
+        </p>
+        <form
+          className="mt-3 flex flex-wrap gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            importRegistry.mutate();
+          }}
+        >
+          <label className="sr-only" htmlFor="nctId">
+            Registry ID
+          </label>
+          <input
+            id="nctId"
+            value={nctId}
+            onChange={(e) => setNctId(e.target.value)}
+            placeholder="NCT01234567"
+            className="w-56 rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={importRegistry.isPending}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {importRegistry.isPending ? "Fetching…" : "Load from registry"}
+          </button>
+        </form>
+        {imported && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Loaded {imported.nctId} · status {imported.status} ·{" "}
+            {imported.conditions.slice(0, 3).join(", ") || "no listed condition"} ·{" "}
+            <a className="underline" href={imported.url} target="_blank" rel="noreferrer">
+              view the source record
+            </a>{" "}
+            (retrieved {new Date(imported.accessedAt).toISOString()}).
+          </p>
+        )}
+      </section>
 
       {open && (
         <form

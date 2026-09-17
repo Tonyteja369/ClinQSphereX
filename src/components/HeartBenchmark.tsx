@@ -15,6 +15,24 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { runHeartBenchmark, type BenchmarkResult } from "@/lib/heart-benchmark.functions";
+import {
+  explainBenchmarkDiscrepancy,
+  type DiscrepancyExplanation,
+} from "@/lib/benchmark-explainer.functions";
+
+type Arm = {
+  side: "classical" | "quantum";
+  pos: number;
+  neg: number;
+  tp: number;
+  fp: number;
+  tpr: number | null;
+  fpr: number | null;
+  auc: number | null;
+  reported: number;
+  delta: number | null;
+  curve_points: number;
+};
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/DataState";
@@ -217,6 +235,137 @@ export function HeartBenchmark() {
     }));
   }, [result]);
 
+
+  /**
+   * Recomputes the exact inputs the ROC chart consumes — class counts, TPR/FPR
+   * at the decision threshold and a rank-based (Mann-Whitney) AUC — straight
+   * from the per-record test predictions, so a reported AUC can be checked
+   * against an independent recomputation rather than trusted.
+   */
+  const diagnostics = useMemo(() => {
+    if (!result) return null;
+    const traces = result.prediction_trace ?? [];
+    if (traces.length === 0) return null;
+
+    const arm = (side: "classical" | "quantum"): Arm => {
+      const rows = traces.map((t) => ({
+        score: side === "classical" ? t.classical_score : t.quantum_score,
+        label: t.true_label,
+        pred: side === "classical" ? t.classical_prediction : t.quantum_prediction,
+      }));
+      const pos = rows.filter((r) => r.label === 1).length;
+      const neg = rows.length - pos;
+
+      // Tie-aware mid-rank AUC.
+      const sorted = [...rows].sort((a, b) => a.score - b.score);
+      const ranks = new Array<number>(sorted.length).fill(0);
+      let i = 0;
+      while (i < sorted.length) {
+        let j = i;
+        while (j + 1 < sorted.length && sorted[j + 1]!.score === sorted[i]!.score) j += 1;
+        const r = (i + j) / 2 + 1;
+        for (let k = i; k <= j; k += 1) ranks[k] = r;
+        i = j + 1;
+      }
+      let rankSumPos = 0;
+      sorted.forEach((r, idx) => {
+        if (r.label === 1) rankSumPos += ranks[idx]!;
+      });
+      const auc = pos > 0 && neg > 0 ? (rankSumPos - (pos * (pos + 1)) / 2) / (pos * neg) : null;
+
+      const tp = rows.filter((r) => r.pred === 1 && r.label === 1).length;
+      const fp = rows.filter((r) => r.pred === 1 && r.label === 0).length;
+      const m = side === "classical" ? result.classical : result.quantum;
+      return {
+        side,
+        pos,
+        neg,
+        tp,
+        fp,
+        tpr: pos > 0 ? tp / pos : null,
+        fpr: neg > 0 ? fp / neg : null,
+        auc,
+        reported: m.roc_auc,
+        delta: auc === null ? null : auc - m.roc_auc,
+        curve_points: m.roc_curve?.length ?? 0,
+      };
+    };
+
+    const classical = arm("classical");
+    const quantum = arm("quantum");
+    const flags: string[] = [];
+    for (const a of [classical, quantum]) {
+      const name = a.side === "classical" ? "Classical" : "Quantum";
+      if (a.delta !== null && Math.abs(a.delta) > 0.005) {
+        flags.push(
+          `${name}: the reported ROC-AUC (${n3(a.reported)}) disagrees with the recomputation from the stored per-record scores (${n3(a.auc!)}). Most often this is score rounding in the stored trace creating ties, not an error in the run — but until the two agree, neither figure should be quoted.`,
+        );
+      }
+      if (a.auc !== null && a.auc < 0.5) {
+        flags.push(
+          `${name}: recomputed AUC is below 0.5 (${n3(a.auc)}), which indicates the score is oriented against the positive class, not that the model is worse than chance.`,
+        );
+      }
+      if (a.curve_points === 0) {
+        flags.push(`${name}: the run stored no ROC operating points, so the curve is rebuilt from scores.`);
+      }
+      if (a.pos === 0 || a.neg === 0) {
+        flags.push(`${name}: one class is absent from the test set, so AUC is undefined.`);
+      }
+    }
+    return { classical, quantum, flags, samples: traces.length };
+  }, [result]);
+
+  const explainFn = useServerFn(explainBenchmarkDiscrepancy);
+  const [explaining, setExplaining] = useState(false);
+  const [explanation, setExplanation] = useState<DiscrepancyExplanation | null>(null);
+  const [explainError, setExplainError] = useState<string | null>(null);
+
+  async function explain() {
+    if (!result || !diagnostics) return;
+    setExplaining(true);
+    setExplainError(null);
+    try {
+      const payload = {
+        test_samples: result.dataset.test_samples,
+        discordant_pairs: result.significance.full_vs_quantum.discordant_pairs,
+        mcnemar_p: result.significance.full_vs_quantum.p_value,
+        quantum_features: result.best_quantum.features,
+        classical_features: result.dataset.features,
+        qubits: result.best_quantum.qubits,
+        feature_map: result.best_quantum.feature_map,
+        svm_c: result.best_quantum.svm_c,
+        kernel_min_eigenvalue: result.psd?.min_eigenvalue ?? null,
+        psd_repaired: Boolean(result.psd?.repaired),
+        notes: diagnostics.flags,
+        classical: {
+          accuracy: result.classical.accuracy,
+          roc_auc: result.classical.roc_auc,
+          tpr: diagnostics.classical.tpr ?? 0,
+          fpr: diagnostics.classical.fpr ?? 0,
+          positives: diagnostics.classical.pos,
+          negatives: diagnostics.classical.neg,
+          auc_recomputed: diagnostics.classical.auc ?? 0,
+          curve_points: diagnostics.classical.curve_points,
+        },
+        quantum: {
+          accuracy: result.quantum.accuracy,
+          roc_auc: result.quantum.roc_auc,
+          tpr: diagnostics.quantum.tpr ?? 0,
+          fpr: diagnostics.quantum.fpr ?? 0,
+          positives: diagnostics.quantum.pos,
+          negatives: diagnostics.quantum.neg,
+          auc_recomputed: diagnostics.quantum.auc ?? 0,
+          curve_points: diagnostics.quantum.curve_points,
+        },
+      };
+      setExplanation(await explainFn({ data: payload }));
+    } catch (e) {
+      setExplainError(e instanceof Error ? e.message : "The explanation could not be generated.");
+    } finally {
+      setExplaining(false);
+    }
+  }
 
   const preview = result
     ? (result.kernel_previews.find((p) => p.kernel_id === kernelId) ?? result.kernel_previews[0]!)
@@ -949,6 +1098,114 @@ export function HeartBenchmark() {
               </div>
             </GlassPanel>
           </div>
+
+          {diagnostics ? (
+            <GlassPanel className="p-5">
+              <h4 className="text-sm font-semibold">Quantum advantage diagnostics</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                The same inputs the ROC chart uses, recomputed here from the {diagnostics.samples}{" "}
+                per-record test predictions. If a reported AUC disagrees with the recomputed value,
+                the reported figure is wrong — not the chart.
+              </p>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[42rem] text-sm">
+                  <caption className="sr-only">Recomputed ROC and AUC inputs per arm</caption>
+                  <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      {[
+                        "Input",
+                        "Classical",
+                        "Quantum",
+                      ].map((h) => (
+                        <th key={h} scope="col" className="px-3 py-2">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {(
+                      [
+                        ["Positives / negatives in test set", (a: Arm) => `${a.pos} / ${a.neg}`],
+                        ["TPR at the decision threshold", (a: Arm) => (a.tpr === null ? "—" : n3(a.tpr))],
+                        ["FPR at the decision threshold", (a: Arm) => (a.fpr === null ? "—" : n3(a.fpr))],
+                        ["TP / FP counts used", (a: Arm) => `${a.tp} / ${a.fp}`],
+                        ["ROC-AUC reported by the run", (a: Arm) => n3(a.reported)],
+                        [
+                          "ROC-AUC recomputed here (rank method)",
+                          (a: Arm) => (a.auc === null ? "—" : n3(a.auc)),
+                        ],
+                        [
+                          "Difference (recomputed − reported)",
+                          (a: Arm) => (a.delta === null ? "—" : signed(a.delta, n3)),
+                        ],
+                        ["Curve points plotted", (a: Arm) => String(a.curve_points)],
+                      ] as [string, (a: Arm) => string][]
+                    ).map(([label, f]) => (
+                      <tr key={label}>
+                        <th scope="row" className="px-3 py-2 text-left font-medium">
+                          {label}
+                        </th>
+                        <td className="px-3 py-2 tabular-nums">{f(diagnostics.classical)}</td>
+                        <td className="px-3 py-2 tabular-nums">{f(diagnostics.quantum)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <ul className="mt-4 space-y-1 text-sm">
+                {diagnostics.flags.length === 0 ? (
+                  <li className="text-muted-foreground">
+                    No inconsistency found: both recomputed AUCs match the reported values to three
+                    decimals, and both curves carry plotted points.
+                  </li>
+                ) : (
+                  diagnostics.flags.map((f) => (
+                    <li key={f} className="rounded-md border border-border bg-secondary p-2">
+                      {f}
+                    </li>
+                  ))
+                )}
+              </ul>
+
+              <div className="mt-5 border-t border-border pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h5 className="text-sm font-semibold">AI discrepancy explainer</h5>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={explain}
+                    disabled={explaining}
+                  >
+                    {explaining ? "Analysing…" : "Explain these numbers"}
+                  </Button>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Sends only the measured numbers above — no patient records — to the AI service and
+                  asks what changed in the ROC/AUC inputs and what could cause it. The reply is an
+                  AI-written interpretation, not a measurement, and no figure on this page comes from
+                  it.
+                </p>
+                {explainError ? (
+                  <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    {explainError}
+                  </p>
+                ) : null}
+                {explanation ? (
+                  <div className="mt-3 rounded-md border border-border bg-secondary p-3">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {explanation.summary}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Generated by {explanation.model} at{" "}
+                      {new Date(explanation.generated_at).toISOString()}.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </GlassPanel>
+          ) : null}
 
           <GlassPanel className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">

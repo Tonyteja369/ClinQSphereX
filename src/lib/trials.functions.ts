@@ -28,6 +28,59 @@ export type TrialSearchResult = {
   trials: RegistryTrial[];
 };
 
+export type RegistryRecord = {
+  nctId: string;
+  title: string;
+  officialTitle: string | null;
+  sponsor: string | null;
+  phase: string | null;
+  status: string;
+  enrollment: number | null;
+  conditions: string[];
+  summary: string | null;
+  url: string;
+  accessedAt: string;
+};
+
+/**
+ * Registry lookup used when creating a study: one real record from
+ * ClinicalTrials.gov (U.S. NIH public registry, API v2) by its NCT identifier.
+ * Nothing is invented — if the registry has no such record the caller is told.
+ */
+export const lookupRegistryStudy = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { nctId: string }) => {
+    const raw = (input?.nctId ?? "").trim().toUpperCase();
+    if (!/^NCT\d{8}$/.test(raw)) throw new Error("Enter a registry ID in the form NCT01234567");
+    return { nctId: raw };
+  })
+  .handler(async ({ data }): Promise<RegistryRecord> => {
+    const res = await fetch(
+      `https://clinicaltrials.gov/api/v2/studies/${data.nctId}?format=json`,
+      { headers: { accept: "application/json" } },
+    );
+    if (res.status === 404) throw new Error(`${data.nctId} was not found in ClinicalTrials.gov.`);
+    if (!res.ok) throw new Error(`ClinicalTrials.gov returned ${res.status}. Please try again shortly.`);
+    const json = (await res.json()) as any;
+    const p = json.protocolSection ?? {};
+    const id = p.identificationModule ?? {};
+    const design = p.designModule ?? {};
+    return {
+      nctId: id.nctId ?? data.nctId,
+      title: id.briefTitle ?? "Untitled study",
+      officialTitle: id.officialTitle ?? null,
+      sponsor: p.sponsorCollaboratorsModule?.leadSponsor?.name ?? null,
+      phase: (design.phases ?? [])[0] ?? null,
+      status: p.statusModule?.overallStatus ?? "UNKNOWN",
+      enrollment:
+        typeof design.enrollmentInfo?.count === "number" ? design.enrollmentInfo.count : null,
+      conditions: p.conditionsModule?.conditions ?? [],
+      summary: p.descriptionModule?.briefSummary?.slice(0, 600) ?? null,
+      url: `https://clinicaltrials.gov/study/${id.nctId ?? data.nctId}`,
+      accessedAt: new Date().toISOString(),
+    };
+  });
+
 const FIELDS = [
   "protocolSection.identificationModule",
   "protocolSection.statusModule",

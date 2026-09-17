@@ -371,7 +371,10 @@ function evaluate(scores: number[], labels: number[], threshold: number): Metric
   for (let i = 0; i < pairs.length; i += 1) {
     if (pairs[i]!.y === 1) cTp += 1;
     else cFp += 1;
-    if (i + 1 < pairs.length && pairs[i + 1]!.s === pairs[i]!.s) continue;
+    // Scores within 1e-9 are treated as tied. Kernel-SVM decision values pile
+    // up on the margin boundaries, and ordering those by floating-point noise
+    // produced an AUC that disagreed with a tie-aware recomputation.
+    if (i + 1 < pairs.length && Math.abs(pairs[i + 1]!.s - pairs[i]!.s) <= 1e-9) continue;
     const tpr = pos === 0 ? 0 : cTp / pos;
     const fpr = neg === 0 ? 0 : cFp / neg;
     auc += ((fpr - prevFpr) * (tpr + prevTpr)) / 2;
@@ -497,6 +500,13 @@ function trainKernelSvm(K: number[][], y: number[], C = 1, tol = 1e-3, maxPasses
 }
 
 const round4 = (v: number) => Math.round(v * 1e4) / 1e4;
+/**
+ * Per-record scores are stored at higher precision than they are displayed:
+ * quantum decision values are small, and 4-decimal rounding created artificial
+ * ties that made an AUC recomputed from the trace disagree with the AUC the run
+ * measured from the raw scores.
+ */
+const round9 = (v: number) => Math.round(v * 1e9) / 1e9;
 
 /**
  * Probe how finely the host clock actually advances. Serverless/edge runtimes
@@ -915,9 +925,9 @@ export const runHeartBenchmark = createServerFn({ method: "POST" })
         id: `TEST-${String(i + 1).padStart(3, "0")}`,
         true_label: y,
         classical_prediction: cp,
-        classical_score: round4(cs),
+        classical_score: round9(cs),
         quantum_prediction: qp,
-        quantum_score: round4(qs),
+        quantum_score: round9(qs),
         classical_correct: cp === y,
         quantum_correct: qp === y,
       };
