@@ -578,7 +578,16 @@ export function HeartBenchmark() {
             </dl>
 
             <div className="mt-5 space-y-3">
-              <AccuracyBar label="Classical accuracy" value={result.classical.accuracy} tone="primary" />
+              <AccuracyBar
+                label="Classical accuracy (all 13 features)"
+                value={result.classical.accuracy}
+                tone="primary"
+              />
+              <AccuracyBar
+                label="Classical accuracy (feature-matched — the like-for-like row)"
+                value={result.classical_matched.accuracy}
+                tone="primary"
+              />
               <AccuracyBar
                 label="Best quantum accuracy"
                 value={result.best_quantum.accuracy}
@@ -589,15 +598,27 @@ export function HeartBenchmark() {
             <p className="mt-4 text-sm">
               {result.quantum_exceeds_classical
                 ? `Under the evaluated experimental configuration, the best quantum-kernel model achieved higher test accuracy than the classical logistic-regression baseline (${pct(result.best_quantum.accuracy)} vs ${pct(result.classical.accuracy)}, +${Math.abs(result.accuracy_difference_pp).toFixed(1)} percentage points). Performance is configuration- and dataset-dependent; this is not a general quantum-advantage result.`
-                : `Under the evaluated configurations, the classical baseline achieved higher or equal test accuracy (${pct(result.classical.accuracy)} vs ${pct(result.best_quantum.accuracy)}). Best measured quantum configuration did not exceed the classical baseline. The quantum result remains an experimental benchmark.`}
+                : `Under the evaluated configurations, the classical baseline achieved higher or equal test accuracy (${pct(result.classical.accuracy)} vs ${pct(result.best_quantum.accuracy)}). Best measured quantum configuration did not exceed the classical baseline. The quantum result remains an experimental benchmark.`}{" "}
+              {result.significance
+                ? `McNemar exact p = ${result.significance.p_value.toFixed(4)} on ${result.significance.discordant_pairs} discordant record${result.significance.discordant_pairs === 1 ? "" : "s"}: the difference between the two arms is not statistically distinguishable from noise, whichever arm is numerically ahead.`
+                : null}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Selection rule: {result.evaluation_protocol.selection_rule} Highest test accuracy
-              observed anywhere in the sweep was {pct(result.best_quantum_by_test.accuracy)} (
-              {result.best_quantum_by_test.label}); it is shown for transparency only and was not
-              used for selection. Full sweep runtime {ms(result.sweep_runtime_ms)} across{" "}
-              {result.quantum_experiments.length} configurations.
+              Selection rule: {result.evaluation_protocol.selection_rule} Full sweep runtime{" "}
+              {ms(result.sweep_runtime_ms)} across {result.quantum_experiments.length}{" "}
+              configurations.
             </p>
+            <p className="mt-2 rounded-md border border-border bg-secondary p-3 text-xs">
+              <strong>Do not read the sweep maximum as a quantum result.</strong> The highest test
+              accuracy appearing anywhere in the sweep is{" "}
+              {pct(result.best_quantum_by_test.accuracy)} ({result.best_quantum_by_test.label}) —
+              numerically above the classical baseline of {pct(result.classical.accuracy)}. That
+              figure was picked by looking at the held-out test labels across{" "}
+              {result.quantum_experiments.length} configurations, so it is an optimistically biased
+              number, not a measured advantage. The reported quantum arm above is the one selected on
+              inner-validation data only, before the test set was touched.
+            </p>
+
           </GlassPanel>
 
           <GlassPanel className="overflow-x-auto p-5">
