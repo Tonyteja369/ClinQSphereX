@@ -161,7 +161,7 @@ export function HeartBenchmark() {
      * so the panel still plots measured values rather than nothing.
      */
     const fromTraces = (side: "classical" | "quantum") => {
-      const traces = result.prediction_traces ?? [];
+      const traces = result.prediction_trace ?? [];
       if (traces.length === 0) return [] as { fpr: number; tpr: number }[];
       const rows = traces.map((t: any) => ({
         score: side === "classical" ? t.classical_score : t.quantum_score,
@@ -172,7 +172,7 @@ export function HeartBenchmark() {
               : t.quantum_prediction
             : 1 - (side === "classical" ? t.classical_prediction : t.quantum_prediction),
       }));
-      const pos = rows.filter((r) => r.label === 1).length;
+      const pos = rows.filter((r: { score: number; label: number }) => r.label === 1).length;
       const neg = rows.length - pos;
       if (pos === 0 || neg === 0) return [] as { fpr: number; tpr: number }[];
       const sorted = [...rows].sort((a, b) => b.score - a.score);
