@@ -31,16 +31,23 @@ const STEPS = [
 
 const n3 = (v: number) => v.toFixed(3);
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+/**
+ * Durations are measured in milliseconds but reported in microseconds with
+ * three decimals, because most stages here finish far below a millisecond.
+ */
 const ms = (v: number) =>
   v >= 1000
     ? `${(v / 1000).toFixed(3)} s`
     : v >= 1
-      ? `${v.toFixed(2)} ms`
+      ? `${v.toFixed(3)} ms`
       : v > 0
-        ? `${(v * 1000).toFixed(1)} µs`
+        ? `${(v * 1000).toFixed(3)} µs`
         : "below timer resolution";
+const ci = (i: { lower: number; upper: number }) =>
+  `${(i.lower * 100).toFixed(1)}–${(i.upper * 100).toFixed(1)}%`;
 const signed = (v: number, f: (n: number) => string) => `${v > 0 ? "+" : ""}${f(v)}`;
 const signedMs = (v: number) => `${v > 0 ? "+" : "−"}${ms(Math.abs(v))}`;
+
 
 export function HeartBenchmark() {
   const run = useServerFn(runHeartBenchmark);
