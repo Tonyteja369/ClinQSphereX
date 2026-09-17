@@ -15,6 +15,24 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { runHeartBenchmark, type BenchmarkResult } from "@/lib/heart-benchmark.functions";
+import {
+  explainBenchmarkDiscrepancy,
+  type DiscrepancyExplanation,
+} from "@/lib/benchmark-explainer.functions";
+
+type Arm = {
+  side: "classical" | "quantum";
+  pos: number;
+  neg: number;
+  tp: number;
+  fp: number;
+  tpr: number | null;
+  fpr: number | null;
+  auc: number | null;
+  reported: number;
+  delta: number | null;
+  curve_points: number;
+};
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/DataState";
@@ -217,6 +235,137 @@ export function HeartBenchmark() {
     }));
   }, [result]);
 
+
+  /**
+   * Recomputes the exact inputs the ROC chart consumes — class counts, TPR/FPR
+   * at the decision threshold and a rank-based (Mann-Whitney) AUC — straight
+   * from the per-record test predictions, so a reported AUC can be checked
+   * against an independent recomputation rather than trusted.
+   */
+  const diagnostics = useMemo(() => {
+    if (!result) return null;
+    const traces = result.prediction_trace ?? [];
+    if (traces.length === 0) return null;
+
+    const arm = (side: "classical" | "quantum"): Arm => {
+      const rows = traces.map((t) => ({
+        score: side === "classical" ? t.classical_score : t.quantum_score,
+        label: t.true_label,
+        pred: side === "classical" ? t.classical_prediction : t.quantum_prediction,
+      }));
+      const pos = rows.filter((r) => r.label === 1).length;
+      const neg = rows.length - pos;
+
+      // Tie-aware mid-rank AUC.
+      const sorted = [...rows].sort((a, b) => a.score - b.score);
+      const ranks = new Array<number>(sorted.length).fill(0);
+      let i = 0;
+      while (i < sorted.length) {
+        let j = i;
+        while (j + 1 < sorted.length && sorted[j + 1]!.score === sorted[i]!.score) j += 1;
+        const r = (i + j) / 2 + 1;
+        for (let k = i; k <= j; k += 1) ranks[k] = r;
+        i = j + 1;
+      }
+      let rankSumPos = 0;
+      sorted.forEach((r, idx) => {
+        if (r.label === 1) rankSumPos += ranks[idx]!;
+      });
+      const auc = pos > 0 && neg > 0 ? (rankSumPos - (pos * (pos + 1)) / 2) / (pos * neg) : null;
+
+      const tp = rows.filter((r) => r.pred === 1 && r.label === 1).length;
+      const fp = rows.filter((r) => r.pred === 1 && r.label === 0).length;
+      const m = side === "classical" ? result.classical : result.quantum;
+      return {
+        side,
+        pos,
+        neg,
+        tp,
+        fp,
+        tpr: pos > 0 ? tp / pos : null,
+        fpr: neg > 0 ? fp / neg : null,
+        auc,
+        reported: m.roc_auc,
+        delta: auc === null ? null : auc - m.roc_auc,
+        curve_points: m.roc_curve?.length ?? 0,
+      };
+    };
+
+    const classical = arm("classical");
+    const quantum = arm("quantum");
+    const flags: string[] = [];
+    for (const a of [classical, quantum]) {
+      const name = a.side === "classical" ? "Classical" : "Quantum";
+      if (a.delta !== null && Math.abs(a.delta) > 0.005) {
+        flags.push(
+          `${name}: the reported ROC-AUC (${n3(a.reported)}) disagrees with the recomputation from the same predictions (${n3(a.auc!)}). The reported figure is the one to correct.`,
+        );
+      }
+      if (a.auc !== null && a.auc < 0.5) {
+        flags.push(
+          `${name}: recomputed AUC is below 0.5 (${n3(a.auc)}), which indicates the score is oriented against the positive class, not that the model is worse than chance.`,
+        );
+      }
+      if (a.curve_points === 0) {
+        flags.push(`${name}: the run stored no ROC operating points, so the curve is rebuilt from scores.`);
+      }
+      if (a.pos === 0 || a.neg === 0) {
+        flags.push(`${name}: one class is absent from the test set, so AUC is undefined.`);
+      }
+    }
+    return { classical, quantum, flags, samples: traces.length };
+  }, [result]);
+
+  const explainFn = useServerFn(explainBenchmarkDiscrepancy);
+  const [explaining, setExplaining] = useState(false);
+  const [explanation, setExplanation] = useState<DiscrepancyExplanation | null>(null);
+  const [explainError, setExplainError] = useState<string | null>(null);
+
+  async function explain() {
+    if (!result || !diagnostics) return;
+    setExplaining(true);
+    setExplainError(null);
+    try {
+      const payload = {
+        test_samples: result.dataset.test_samples,
+        discordant_pairs: result.significance.full_vs_quantum.discordant_pairs,
+        mcnemar_p: result.significance.full_vs_quantum.p_value,
+        quantum_features: result.best_quantum.features,
+        classical_features: result.dataset.features,
+        qubits: result.best_quantum.qubits,
+        feature_map: result.best_quantum.feature_map,
+        svm_c: result.best_quantum.svm_c,
+        kernel_min_eigenvalue: result.psd?.min_eigenvalue ?? null,
+        psd_repaired: Boolean(result.psd?.repaired),
+        notes: diagnostics.flags,
+        classical: {
+          accuracy: result.classical.accuracy,
+          roc_auc: result.classical.roc_auc,
+          tpr: diagnostics.classical.tpr ?? 0,
+          fpr: diagnostics.classical.fpr ?? 0,
+          positives: diagnostics.classical.pos,
+          negatives: diagnostics.classical.neg,
+          auc_recomputed: diagnostics.classical.auc ?? 0,
+          curve_points: diagnostics.classical.curve_points,
+        },
+        quantum: {
+          accuracy: result.quantum.accuracy,
+          roc_auc: result.quantum.roc_auc,
+          tpr: diagnostics.quantum.tpr ?? 0,
+          fpr: diagnostics.quantum.fpr ?? 0,
+          positives: diagnostics.quantum.pos,
+          negatives: diagnostics.quantum.neg,
+          auc_recomputed: diagnostics.quantum.auc ?? 0,
+          curve_points: diagnostics.quantum.curve_points,
+        },
+      };
+      setExplanation(await explainFn({ data: payload }));
+    } catch (e) {
+      setExplainError(e instanceof Error ? e.message : "The explanation could not be generated.");
+    } finally {
+      setExplaining(false);
+    }
+  }
 
   const preview = result
     ? (result.kernel_previews.find((p) => p.kernel_id === kernelId) ?? result.kernel_previews[0]!)
