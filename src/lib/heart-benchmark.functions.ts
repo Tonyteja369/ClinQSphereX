@@ -440,6 +440,60 @@ function trainKernelSvm(K: number[][], y: number[], C = 1, tol = 1e-3, maxPasses
 
 const round4 = (v: number) => Math.round(v * 1e4) / 1e4;
 
+/**
+ * Probe how finely the host clock actually advances. Serverless/edge runtimes
+ * deliberately freeze timers between I/O operations, so CPU-bound sections can
+ * legitimately measure as exactly 0 ms. We report the probe instead of hiding it.
+ */
+function probeTimerResolution() {
+  const t0 = performance.now();
+  let spins = 0;
+  let t1 = t0;
+  while (t1 === t0 && spins < 5_000_000) {
+    spins += 1;
+    t1 = performance.now();
+  }
+  const advanced = t1 !== t0;
+  return {
+    advanced,
+    resolution_ms: advanced ? t1 - t0 : 0,
+    spins,
+    note: advanced
+      ? `Host clock advanced after ${spins.toLocaleString()} reads; smallest observed step ${(t1 - t0).toFixed(3)} ms. Durations below this step are reported as "below timer resolution", not as real zeros.`
+      : `Host clock did not advance across ${spins.toLocaleString()} consecutive reads. This runtime freezes timers between I/O operations, so CPU-bound stages measure exactly 0 ms regardless of the work done. Treat all sub-step durations as unmeasurable here and use the reported operation counts (kernel evaluations, SMO passes) as the workload evidence.`,
+  };
+}
+
+/** Two-sided exact McNemar test on the discordant pairs of two classifiers. */
+function mcnemarExact(aCorrect: boolean[], bCorrect: boolean[]) {
+  let b = 0; // first correct, second wrong
+  let c = 0; // second correct, first wrong
+  for (let i = 0; i < aCorrect.length; i += 1) {
+    if (aCorrect[i] && !bCorrect[i]) b += 1;
+    else if (!aCorrect[i] && bCorrect[i]) c += 1;
+  }
+  const n = b + c;
+  let p = 1;
+  if (n > 0) {
+    const k = Math.min(b, c);
+    // binomial tail with p = 0.5, computed with a running coefficient
+    let coeff = 1;
+    let tail = 1; // C(n,0)
+    for (let i = 1; i <= k; i += 1) {
+      coeff = (coeff * (n - i + 1)) / i;
+      tail += coeff;
+    }
+    p = Math.min(1, 2 * tail * Math.pow(0.5, n));
+  }
+  return {
+    discordant_pairs: n,
+    only_first_correct: b,
+    only_second_correct: c,
+    p_value: Math.round(p * 1e6) / 1e6,
+    significant_at_05: p < 0.05,
+  };
+}
+
 /* --------------------------------------------------------------- runner */
 
 export const runHeartBenchmark = createServerFn({ method: "POST" })
