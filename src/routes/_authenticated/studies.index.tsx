@@ -32,6 +32,12 @@ function StudiesPage() {
   const [nctId, setNctId] = useState("");
   const [imported, setImported] = useState<RegistryRecord | null>(null);
   const lookup = useServerFn(lookupRegistryStudy);
+  const ensureMembership = useServerFn(ensureOrgMembership);
+
+  const { data: membership } = useQuery({
+    queryKey: ["org-membership"],
+    queryFn: async () => ensureMembership({ data: {} }),
+  });
 
   const { data: studies } = useQuery({
     queryKey: ["studies"],
