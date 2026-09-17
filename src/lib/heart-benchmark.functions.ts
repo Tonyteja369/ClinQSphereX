@@ -214,7 +214,24 @@ export type BenchmarkResult = {
     spins: number;
     note: string;
   };
+  intervals: {
+    method: string;
+    test_samples: number;
+    classical: WilsonInterval;
+    classical_matched: WilsonInterval;
+    quantum: WilsonInterval;
+    note: string;
+  };
+  kernel_timing: {
+    total_kernel_ms: number;
+    kernel_evaluations: number;
+    mean_per_entry_us: number | null;
+    measurable: boolean;
+    note: string;
+  };
+  psd: PsdReport;
   fair_comparison: {
+
     same_dataset: boolean;
     same_features: boolean;
     feature_parity_note: string;
