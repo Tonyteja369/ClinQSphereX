@@ -86,6 +86,7 @@ export type QuantumExperiment = MetricSet & {
   kernel_train_dim: string;
   kernel_test_dim: string;
   kernel_evaluations: number;
+  kernel_evaluation_formula: string;
   support_vectors: number;
   validation_accuracy: number;
   kernel_time_ms: number;
