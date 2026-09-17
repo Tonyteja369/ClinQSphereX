@@ -292,11 +292,11 @@ async function loadHeartDataset() {
   if (datasetCache) return datasetCache;
   let lastError = "request failed";
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const started = Date.now();
+    const started = performance.now();
     try {
       const res = await fetch(DATA_URL, { signal: AbortSignal.timeout(20000) });
       if (!res.ok) {
-        lastError = `HTTP ${res.status} after ${Date.now() - started} ms`;
+        lastError = `HTTP ${res.status} after ${Math.round(performance.now() - started)} ms`;
       } else {
         const text = await res.text();
         const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -318,7 +318,7 @@ async function loadHeartDataset() {
         return datasetCache;
       }
     } catch (error) {
-      lastError = `${error instanceof Error ? error.message : "request failed"} after ${Date.now() - started} ms`;
+      lastError = `${error instanceof Error ? error.message : "request failed"} after ${Math.round(performance.now() - started)} ms`;
     }
     if (attempt < 3) await wait(300 * attempt);
   }
