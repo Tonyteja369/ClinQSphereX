@@ -28,6 +28,9 @@ function StudiesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ code: "", title: "", sponsor: "", phase: "II", target: 50 });
+  const [nctId, setNctId] = useState("");
+  const [imported, setImported] = useState<RegistryRecord | null>(null);
+  const lookup = useServerFn(lookupRegistryStudy);
 
   const { data: studies } = useQuery({
     queryKey: ["studies"],
